@@ -1,16 +1,25 @@
 #!/bin/bash
 
 # OpenRouter MCP Server Setup Script
-# Key management and installation
+# Polished installer with key management
 
 set -e
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+# Icons
+CHECK="${GREEN}✓${NC}"
+CROSS="${RED}✗${NC}"
+ARROW="${CYAN}→${NC}"
+INFO="${BLUE}ℹ${NC}"
 
 # Determine shell config file
 get_shell_config() {
@@ -25,198 +34,322 @@ get_shell_config() {
 
 SHELL_CONFIG=$(get_shell_config)
 
+# Print banner
+print_banner() {
+    echo ""
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}  ${BOLD}OpenRouter MCP Server${NC}                                    ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}  ${DIM}Bridge Claude Code to GPT, Gemini, Llama & more${NC}          ${CYAN}║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+# Print step header
+step() {
+    echo ""
+    echo -e "${BOLD}${BLUE}[$1/$2]${NC} ${BOLD}$3${NC}"
+    echo -e "${DIM}────────────────────────────────────────${NC}"
+}
+
+# Spinner for long operations
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    while ps -p $pid > /dev/null 2>&1; do
+        for i in $(seq 0 9); do
+            printf "\r  ${CYAN}${spinstr:$i:1}${NC} $2"
+            sleep $delay
+        done
+    done
+    printf "\r"
+}
+
 # Show usage
 show_help() {
+    print_banner
+    echo -e "${BOLD}Usage:${NC}"
     echo ""
-    echo -e "${BLUE}OpenRouter MCP Server - Setup & Key Management${NC}"
-    echo ""
-    echo "Usage:"
-    echo "  ./setup.sh              Fresh install (build + prompt for key)"
-    echo "  ./setup.sh --set-key    Add or change API key"
-    echo "  ./setup.sh --show-key   Show current key (masked)"
-    echo "  ./setup.sh --remove-key Remove stored API key"
-    echo "  ./setup.sh --help       Show this help"
+    echo -e "  ${CYAN}./setup.sh${NC}              Install and configure everything"
+    echo -e "  ${CYAN}./setup.sh --set-key${NC}    Add or change API key"
+    echo -e "  ${CYAN}./setup.sh --show-key${NC}   Show current key (masked)"
+    echo -e "  ${CYAN}./setup.sh --remove-key${NC} Remove stored API key"
+    echo -e "  ${CYAN}./setup.sh --uninstall${NC}  Remove from Claude Code"
+    echo -e "  ${CYAN}./setup.sh --help${NC}       Show this help"
     echo ""
 }
 
 # Show masked key
 show_key() {
     echo ""
-    # Check environment variable first
     if [ -n "$OPENROUTER_API_KEY" ]; then
         KEY="$OPENROUTER_API_KEY"
-        PREFIX="${KEY:0:8}"
+        PREFIX="${KEY:0:10}"
         SUFFIX="${KEY: -4}"
-        echo -e "${GREEN}Current key (from env):${NC} ${PREFIX}...${SUFFIX}"
+        echo -e "  $CHECK ${GREEN}API key found${NC}"
+        echo -e "     ${DIM}$PREFIX...$SUFFIX${NC}"
         return 0
     fi
 
-    # Check shell config
     if grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
         KEY=$(grep "OPENROUTER_API_KEY" "$SHELL_CONFIG" | sed 's/.*"\(.*\)".*/\1/' | tail -1)
         if [ -n "$KEY" ]; then
-            PREFIX="${KEY:0:8}"
+            PREFIX="${KEY:0:10}"
             SUFFIX="${KEY: -4}"
-            echo -e "${GREEN}Current key (from $SHELL_CONFIG):${NC} ${PREFIX}...${SUFFIX}"
+            echo -e "  $CHECK ${GREEN}API key found${NC}"
+            echo -e "     ${DIM}$PREFIX...$SUFFIX${NC}"
             return 0
         fi
     fi
 
-    echo -e "${YELLOW}No API key found.${NC}"
-    echo "Run ./setup.sh --set-key to add one."
+    echo -e "  $CROSS ${YELLOW}No API key configured${NC}"
+    echo -e "     Run ${CYAN}./setup.sh --set-key${NC} to add one"
+    echo ""
     return 1
 }
 
 # Set or update key
 set_key() {
     echo ""
-    echo -e "${BLUE}=== Set OpenRouter API Key ===${NC}"
+    echo -e "${BOLD}Set OpenRouter API Key${NC}"
     echo ""
-    echo "Get your key at: https://openrouter.ai/keys"
+    echo -e "  $ARROW Get your key at: ${CYAN}https://openrouter.ai/keys${NC}"
     echo ""
-
-    # Prompt for the API key (hidden input)
-    read -sp "Enter your OpenRouter API key: " API_KEY
+    read -sp "  Enter API key: " API_KEY
     echo ""
 
     if [ -z "$API_KEY" ]; then
-        echo -e "${YELLOW}No key entered. Aborted.${NC}"
+        echo -e "  $CROSS ${YELLOW}No key entered${NC}"
         return 1
     fi
 
-    # Validate key format (basic check)
+    # Validate format
     if [[ ! "$API_KEY" =~ ^sk-or- ]]; then
-        echo -e "${YELLOW}Warning: Key doesn't start with 'sk-or-'. Are you sure this is correct?${NC}"
-        read -p "Continue anyway? (y/N): " CONTINUE
+        echo ""
+        echo -e "  ${YELLOW}⚠ Key format looks unusual${NC} ${DIM}(expected sk-or-...)${NC}"
+        read -p "  Continue anyway? (y/N): " CONTINUE
         if [[ ! "$CONTINUE" =~ ^[Yy]$ ]]; then
-            echo "Aborted."
             return 1
         fi
     fi
 
-    # Remove existing entry if present
+    # Remove existing
     if grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
         sed -i '/# OpenRouter API Key/d' "$SHELL_CONFIG"
         sed -i '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
-        echo "Removed existing key entry."
     fi
 
-    # Add new entry
+    # Add new
     echo "" >> "$SHELL_CONFIG"
     echo "# OpenRouter API Key (added by Claude_GPT_MCP setup)" >> "$SHELL_CONFIG"
     echo "export OPENROUTER_API_KEY=\"$API_KEY\"" >> "$SHELL_CONFIG"
-
-    # Export for current session
     export OPENROUTER_API_KEY="$API_KEY"
 
     echo ""
-    echo -e "${GREEN}API key saved to $SHELL_CONFIG${NC}"
-    echo "Key is now available in this session."
+    echo -e "  $CHECK ${GREEN}API key saved${NC}"
     echo ""
-    echo -e "${YELLOW}Note:${NC} Run 'source $SHELL_CONFIG' or restart your terminal for other sessions."
+    echo -e "  ${BOLD}Security:${NC}"
+    echo -e "  ${DIM}├${NC} Stored locally on your machine"
+    echo -e "  ${DIM}├${NC} Only accessible to your user account"
+    echo -e "  ${DIM}└${NC} Never uploaded or committed to git"
+    echo ""
 }
 
 # Remove key
 remove_key() {
     echo ""
-    echo -e "${BLUE}=== Remove OpenRouter API Key ===${NC}"
+    echo -e "${BOLD}Remove API Key${NC}"
     echo ""
 
     if ! grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
-        echo -e "${YELLOW}No key found in $SHELL_CONFIG${NC}"
+        echo -e "  $INFO No key found"
+        echo ""
         return 0
     fi
 
-    read -p "Remove API key from $SHELL_CONFIG? (y/N): " CONFIRM
+    read -p "  Remove API key? (y/N): " CONFIRM
     if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
-        echo "Aborted."
+        echo -e "  ${DIM}Cancelled${NC}"
         return 0
     fi
 
     sed -i '/# OpenRouter API Key/d' "$SHELL_CONFIG"
     sed -i '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
 
-    # Clean up any empty lines at end of file
-    sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$SHELL_CONFIG" 2>/dev/null || true
-
-    echo -e "${GREEN}API key removed from $SHELL_CONFIG${NC}"
+    echo -e "  $CHECK ${GREEN}API key removed${NC}"
     echo ""
-    echo -e "${YELLOW}Note:${NC} The key may still be in your current session."
-    echo "Run 'unset OPENROUTER_API_KEY' or restart your terminal."
+}
+
+# Uninstall
+uninstall() {
+    print_banner
+    echo -e "${BOLD}Uninstall OpenRouter MCP Server${NC}"
+    echo ""
+
+    CLAUDE_CONFIG="$HOME/.claude.json"
+
+    if [ ! -f "$CLAUDE_CONFIG" ]; then
+        echo -e "  $INFO No Claude Code config found"
+        echo ""
+        return 0
+    fi
+
+    if ! grep -q "openrouter" "$CLAUDE_CONFIG" 2>/dev/null; then
+        echo -e "  $INFO OpenRouter not installed in Claude Code"
+        echo ""
+        return 0
+    fi
+
+    echo -e "  ${BOLD}This will:${NC}"
+    echo -e "  ${DIM}├${NC} Remove OpenRouter from Claude Code config"
+    echo -e "  ${DIM}└${NC} Only affects THIS machine"
+    echo ""
+    read -p "  Continue? (y/N): " CONFIRM
+    if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+        echo -e "  ${DIM}Cancelled${NC}"
+        return 0
+    fi
+
+    if command -v jq &> /dev/null; then
+        UPDATED=$(jq 'del(.mcpServers.openrouter)' "$CLAUDE_CONFIG")
+        echo "$UPDATED" > "$CLAUDE_CONFIG"
+        echo ""
+        echo -e "  $CHECK ${GREEN}Removed from Claude Code${NC}"
+    else
+        echo ""
+        echo -e "  ${YELLOW}Please manually remove 'openrouter' from ~/.claude.json${NC}"
+    fi
+
+    echo ""
+    read -p "  Also remove API key? (y/N): " REMOVE_KEY
+    if [[ "$REMOVE_KEY" =~ ^[Yy]$ ]]; then
+        remove_key
+    fi
+
+    echo ""
+    echo -e "  ${DIM}Restart Claude Code to apply changes${NC}"
+    echo ""
+    echo -e "  ${DIM}For manual uninstall instructions, see:${NC}"
+    echo -e "  ${CYAN}https://github.com/stefans71/Claude_GPT_MCP#-uninstall${NC}"
+    echo ""
 }
 
 # Full install
 full_install() {
-    echo ""
-    echo -e "${BLUE}=== OpenRouter MCP Server Setup ===${NC}"
-    echo ""
+    print_banner
 
-    # Check Node.js version
+    local TOTAL_STEPS=4
+
+    # Step 1: Check requirements
+    step 1 $TOTAL_STEPS "Checking requirements"
+
     if ! command -v node &> /dev/null; then
-        echo -e "${RED}ERROR: Node.js is not installed. Please install Node.js 18+ first.${NC}"
+        echo -e "  $CROSS ${RED}Node.js not found${NC}"
+        echo -e "     Please install Node.js 18+ from ${CYAN}https://nodejs.org${NC}"
         exit 1
     fi
 
     NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
     if [ "$NODE_VERSION" -lt 18 ]; then
-        echo -e "${RED}ERROR: Node.js 18+ required. Current version: $(node -v)${NC}"
+        echo -e "  $CROSS ${RED}Node.js 18+ required${NC} ${DIM}(found $(node -v))${NC}"
         exit 1
     fi
+    echo -e "  $CHECK Node.js $(node -v)"
 
-    echo -e "Node.js version: ${GREEN}$(node -v)${NC}"
+    if command -v jq &> /dev/null; then
+        echo -e "  $CHECK jq installed"
+    else
+        echo -e "  $INFO jq not found ${DIM}(optional, for JSON handling)${NC}"
+    fi
 
-    # Install dependencies
-    echo ""
-    echo "Installing dependencies..."
-    npm install
+    # Step 2: Install & Build
+    step 2 $TOTAL_STEPS "Building project"
 
-    # Build
-    echo ""
-    echo "Building TypeScript..."
-    npm run build
+    echo -e "  ${DIM}Installing dependencies...${NC}"
+    npm install --silent 2>/dev/null &
+    spinner $! "Installing dependencies..."
+    echo -e "  $CHECK Dependencies installed"
 
-    echo ""
-    echo -e "${GREEN}Build complete!${NC}"
+    echo -e "  ${DIM}Compiling TypeScript...${NC}"
+    npm run build --silent 2>/dev/null &
+    spinner $! "Compiling TypeScript..."
+    echo -e "  $CHECK Build complete"
 
-    # --- API Key Setup ---
-    echo ""
-    echo -e "${BLUE}=== API Key Configuration ===${NC}"
-    echo ""
+    # Step 3: API Key
+    step 3 $TOTAL_STEPS "API key configuration"
 
-    # Check if key already exists
     if [ -n "$OPENROUTER_API_KEY" ]; then
         show_key
-        read -p "Keep existing key? (Y/n): " KEEP
+        echo ""
+        read -p "  Use this key? (Y/n): " KEEP
         if [[ "$KEEP" =~ ^[Nn]$ ]]; then
             set_key
         fi
     elif grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
         show_key
-        read -p "Keep existing key? (Y/n): " KEEP
+        echo ""
+        read -p "  Use this key? (Y/n): " KEEP
         if [[ "$KEEP" =~ ^[Nn]$ ]]; then
             set_key
         fi
     else
-        echo "No API key found."
-        read -p "Would you like to set one now? (Y/n): " SET_NOW
+        echo -e "  $INFO No API key found"
+        echo ""
+        read -p "  Set up API key now? (Y/n): " SET_NOW
         if [[ ! "$SET_NOW" =~ ^[Nn]$ ]]; then
             set_key
         else
             echo ""
-            echo -e "${YELLOW}Skipped. Run './setup.sh --set-key' later to add your key.${NC}"
+            echo -e "  ${DIM}Skipped. Run ${NC}${CYAN}./setup.sh --set-key${NC}${DIM} later${NC}"
         fi
     fi
 
-    # Get absolute path
+    # Step 4: Claude Code config
+    step 4 $TOTAL_STEPS "Claude Code integration"
+
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     SERVER_PATH="$SCRIPT_DIR/dist/index.js"
+    CLAUDE_CONFIG="$HOME/.claude.json"
+
+    if [ -f "$CLAUDE_CONFIG" ]; then
+        echo -e "  $INFO Existing config found"
+    else
+        echo -e "  $INFO No config file yet"
+    fi
 
     echo ""
-    echo -e "${BLUE}=== Claude Code Configuration ===${NC}"
+    echo -e "  ${BOLD}This will:${NC}"
+    echo -e "  ${DIM}├${NC} Add OpenRouter to ~/.claude.json"
+    echo -e "  ${DIM}├${NC} Only affects Claude Code on THIS machine"
+    echo -e "  ${DIM}└${NC} Can be removed with: ${CYAN}./setup.sh --uninstall${NC}"
     echo ""
-    echo "Add to ~/.claude.json:"
-    echo ""
-    cat << EOF
+    read -p "  Add OpenRouter to Claude Code? (Y/n): " CONFIGURE
+    if [[ "$CONFIGURE" =~ ^[Nn]$ ]]; then
+        echo ""
+        echo -e "  ${DIM}Skipped. Run setup again when ready.${NC}"
+        print_complete
+        return 0
+    fi
+
+    NEW_SERVER=$(cat << EOF
+{
+  "command": "node",
+  "args": ["$SERVER_PATH"]
+}
+EOF
+)
+
+    if command -v jq &> /dev/null; then
+        if [ -f "$CLAUDE_CONFIG" ]; then
+            UPDATED=$(jq --argjson server "$NEW_SERVER" '.mcpServers.openrouter = $server' "$CLAUDE_CONFIG")
+            echo "$UPDATED" > "$CLAUDE_CONFIG"
+        else
+            echo "{\"mcpServers\":{\"openrouter\":$NEW_SERVER}}" | jq '.' > "$CLAUDE_CONFIG"
+        fi
+        echo -e "  $CHECK ${GREEN}Added to Claude Code config${NC}"
+    else
+        if [ ! -f "$CLAUDE_CONFIG" ]; then
+            cat << EOF > "$CLAUDE_CONFIG"
 {
   "mcpServers": {
     "openrouter": {
@@ -226,11 +359,40 @@ full_install() {
   }
 }
 EOF
+            echo -e "  $CHECK ${GREEN}Created Claude Code config${NC}"
+        else
+            echo ""
+            echo -e "  ${YELLOW}Please add this to ~/.claude.json manually:${NC}"
+            echo ""
+            echo -e "  ${DIM}\"openrouter\": {${NC}"
+            echo -e "  ${DIM}  \"command\": \"node\",${NC}"
+            echo -e "  ${DIM}  \"args\": [\"$SERVER_PATH\"]${NC}"
+            echo -e "  ${DIM}}${NC}"
+        fi
+    fi
 
+    print_complete
+}
+
+# Print completion message
+print_complete() {
     echo ""
-    echo "Then restart Claude Code."
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}  ${GREEN}${BOLD}✓ Setup Complete!${NC}                                        ${CYAN}║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "${GREEN}=== Setup Complete ===${NC}"
+    echo -e "  ${BOLD}Next steps:${NC}"
+    echo -e "  ${DIM}1.${NC} Restart Claude Code"
+    echo -e "  ${DIM}2.${NC} Try: ${CYAN}\"Ask GPT-4o what it thinks about this code\"${NC}"
+    echo ""
+    echo -e "  ${BOLD}Commands:${NC}"
+    echo -e "  ${DIM}├${NC} ${CYAN}./setup.sh --help${NC}       Show all options"
+    echo -e "  ${DIM}├${NC} ${CYAN}./setup.sh --show-key${NC}   Check API key"
+    echo -e "  ${DIM}└${NC} ${CYAN}./setup.sh --uninstall${NC}  Remove from Claude Code"
+    echo ""
+    echo -e "  ${BOLD}Documentation:${NC}"
+    echo -e "  ${CYAN}https://github.com/stefans71/Claude_GPT_MCP${NC}"
+    echo ""
 }
 
 # Parse arguments
@@ -246,6 +408,9 @@ case "${1:-}" in
         ;;
     --remove-key)
         remove_key
+        ;;
+    --uninstall)
+        uninstall
         ;;
     "")
         full_install
