@@ -1,29 +1,32 @@
-# OpenRouter MCP Server for Claude Code
+# Ask GPT-4o, Gemini & 200+ Models — Without Leaving Claude Code
 
 <div align="center">
 
-**Get a second opinion from any AI model — without leaving Claude**
+**Get instant second opinions, code reviews, and architecture feedback directly inside Claude.**
 
-*You're working with Claude. Now ask GPT-4o, Gemini, or DeepSeek what they think.*
+*No context switching. No copy-paste. Just ask.*
 
-[Quick Start](#-quick-start) •
-[How It Works](#-how-it-works) •
+[30-Second Install](#-quick-start) •
+[See It Work](#-how-it-works) •
 [Examples](#-examples) •
 [Uninstall](#-uninstall)
 
 ---
 
+> **This project was reviewed and improved by GPT-5.2-Codex via OpenRouter** — proving the tool works! See the [contribution details](#-built-with-multi-model-collaboration).
+
 </div>
 
-## Why?
+## Why You'll Love This
 
-You have Claude Pro. It's great. But sometimes you want a **second opinion**:
+- **Instant code review** from GPT-4o without leaving Claude
+- **Compare approaches** across different LLMs in one conversation
+- **Catch edge cases** by getting a second opinion in seconds
+- **Stay in flow** — no tab switching, no context loss
 
-- "Is my approach correct, or am I missing something?"
-- "How would GPT-4o solve this differently?"
-- "Let me have DeepSeek double-check this code"
+> *"Ask GPT-4o to review this function"* — that's it. Claude handles the rest.
 
-This MCP server lets Claude query **200+ models** via OpenRouter — all in the same conversation.
+This MCP server lets Claude query **200+ models** via [OpenRouter](https://openrouter.ai/models) — all in the same conversation.
 
 ## 🎯 How It Works
 
@@ -270,11 +273,39 @@ claude --mcp-debug
 
 ---
 
+## Built with Multi-Model Collaboration
+
+This project practices what it preaches. **GPT-5.2-Codex reviewed and improved this codebase** via OpenRouter, demonstrating real multi-model workflows:
+
+| Reviewed by GPT-5.2-Codex | Improvements Made |
+|---------------------------|-------------------|
+| `setup.sh` | Fixed macOS compatibility, improved error handling, added config backups |
+| `package.json` | Added missing metadata, keywords, proper exports |
+| `README.md` | Made more enticing, added trust/security section |
+
+This is exactly how the tool is meant to be used — Claude writes code, another model reviews it, and you get better results.
+
+## Privacy & Security
+
+- **Your API key stays local** — stored only on your machine
+- **Direct to OpenRouter** — requests go straight to OpenRouter, not through any middleman
+- **No telemetry** — we don't collect any data
+- **Open source** — inspect the code yourself
+
+## Cost
+
+OpenRouter offers a **free tier** with many models available at no cost. Pay-per-use pricing for premium models. See [openrouter.ai/models](https://openrouter.ai/models) for current pricing.
+
+---
+
 <div align="center">
 
 **Built for Claude Code users who want more perspectives**
 
+MIT License
+
 [Report Issue](https://github.com/stefans71/Claude_GPT_MCP/issues) •
+[OpenRouter Models](https://openrouter.ai/models) •
 [OpenRouter](https://openrouter.ai)
 
 </div>
