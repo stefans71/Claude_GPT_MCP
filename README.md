@@ -2,209 +2,275 @@
 
 <div align="center">
 
-**Bridge Claude Code to 200+ AI models**
+**Get a second opinion from any AI model — without leaving Claude**
 
-GPT-4o • Gemini • DeepSeek • Llama • Mistral • and more
+*You're working with Claude. Now ask GPT-4o, Gemini, or DeepSeek what they think.*
 
 [Quick Start](#-quick-start) •
-[Features](#-features) •
-[Usage](#-usage) •
-[Uninstall](#-uninstall) •
-[Troubleshooting](#-troubleshooting)
+[How It Works](#-how-it-works) •
+[Examples](#-examples) •
+[Uninstall](#-uninstall)
 
 ---
 
 </div>
 
-## What is this?
+## Why?
 
-An MCP (Model Context Protocol) server that lets you query **any AI model** directly from Claude Code. Get second opinions, compare approaches, or use specialized models — all without leaving your coding session.
+You have Claude Pro. It's great. But sometimes you want a **second opinion**:
+
+- "Is my approach correct, or am I missing something?"
+- "How would GPT-4o solve this differently?"
+- "Let me have DeepSeek double-check this code"
+
+This MCP server lets Claude query **200+ models** via OpenRouter — all in the same conversation.
+
+## 🎯 How It Works
 
 ```
-You: "Ask GPT-4o if there's a better way to handle this error"
-
-Claude: [queries GPT-4o via OpenRouter]
-
-Claude: "GPT-4o suggests using a Result type instead of try/catch..."
+                    ┌─────────────────────────┐
+                    │      You + Claude       │
+                    │    (Opus 4.5 Pro)       │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │  📝 Write initial plan  │
+                    └───────────┬─────────────┘
+                                │
+          ┌─────────────────────▼─────────────────────┐
+          │  🐬 "Ask Codex to review this plan"       │
+          │     ↓                                     │
+          │  OpenRouter → GPT-Codex → feedback        │
+          └─────────────────────┬─────────────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │  ✏️  Refine plan with    │
+                    │     Codex's feedback    │
+                    └───────────┬─────────────┘
+                                │
+          ┌─────────────────────▼─────────────────────┐
+          │  🐬 "Have Codex check the updated plan"   │
+          │     ↓                                     │
+          │  OpenRouter → GPT-Codex → approval ✓     │
+          └─────────────────────┬─────────────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │  🚀 Implement with      │
+                    │     Claude Opus         │
+                    └─────────────────────────┘
 ```
+
+**Just ask naturally — Claude handles the rest:**
+
+```
+You: "Write a function to parse CSV files"
+
+Claude: [writes the function]
+
+You: "Ask GPT-4o if there's a better approach"
+      ~~~~~~ ← just name the model you want
+
+Claude: [calls OpenRouter API → GPT-4o]
+
+Claude: "GPT-4o suggests using a streaming parser for large files..."
+
+You: "Good idea, let's update it"
+
+Claude: [updates the code]
+```
+
+No special commands needed. Just say "ask GPT-4o", "have Gemini review", "get DeepSeek's opinion" — Claude figures out which model to call.
 
 ## ✨ Features
 
 | Feature | Description |
 |---------|-------------|
-| **200+ Models** | Access GPT-4o, Gemini, DeepSeek, Llama, Mistral, and more |
-| **Dynamic Model List** | Fetches available models from OpenRouter API |
-| **Custom Shortcuts** | Create aliases like `fast` → `gpt-4o-mini` |
-| **Favorites** | Save your go-to models for quick access |
-| **Default Model** | Set your preferred model for all queries |
-| **Secure** | API key stored locally, never uploaded |
+| **200+ Models** | GPT-4o, Gemini, DeepSeek, Llama, Mistral, and more |
+| **Same Session** | No switching apps or copying code |
+| **Your Context** | Other models see what you're working on |
+| **Quick Access** | Just ask Claude to get another opinion |
 
 ## 📋 Prerequisites
 
-Before installing, you need:
-
 | Requirement | Where to get it |
 |-------------|-----------------|
-| **Claude Code CLI** | [claude.ai/download](https://claude.ai/download) (requires Pro/Max subscription or API key) |
+| **Claude Code CLI** | [claude.ai/download](https://claude.ai/download) (requires Pro subscription) |
 | **Node.js 18+** | [nodejs.org](https://nodejs.org) |
 | **OpenRouter Account** | [openrouter.ai](https://openrouter.ai) (free tier available) |
 | **OpenRouter API Key** | [openrouter.ai/keys](https://openrouter.ai/keys) |
 
 ## 🚀 Quick Start
 
+### Option A: Download ZIP (no git needed)
+
+1. **Download:** [Click here to download ZIP](https://github.com/stefans71/Claude_GPT_MCP/archive/refs/heads/main.zip)
+2. **Extract** the ZIP file
+3. **Open terminal** in the extracted folder
+4. **Run:**
+   ```bash
+   ./setup.sh
+   ```
+
+### Option B: Clone with git
+
 ```bash
-# Clone the repository
 git clone https://github.com/stefans71/Claude_GPT_MCP.git
 cd Claude_GPT_MCP
-
-# Run the installer
 ./setup.sh
 ```
 
-The installer will:
-1. ✓ Check Node.js version
-2. ✓ Install dependencies & build
-3. ✓ Prompt for your OpenRouter API key
-4. ✓ Configure Claude Code automatically
+---
 
-**That's it!** Restart Claude Code and you're ready to go.
+The installer handles everything:
+- ✓ Installs dependencies
+- ✓ Prompts for your OpenRouter API key
+- ✓ Configures Claude Code automatically
 
-## 💬 Usage
+**Then restart Claude Code and you're ready.**
 
-Once installed, just ask Claude to query other models:
+## 💬 Examples
 
-### Ask Any Model
+### Get a Second Opinion
 ```
 "Ask GPT-4o to review this function"
-"Get Gemini's opinion on this architecture"
-"Ask DeepSeek to suggest optimizations"
+"What would Gemini do differently here?"
+"Have DeepSeek check this for edge cases"
 ```
 
-### List Available Models
+### Compare Approaches
 ```
-"What models are available on OpenRouter?"
-"Show me models that match 'llama'"
-```
-
-### Set Default Model
-```
-"Set my default model to gpt-4o"
+"Ask GPT-4o and Gemini how they'd implement this"
+"Get Claude and GPT-4o's opinion on this architecture"
 ```
 
-### Create Shortcuts
+### Specialized Tasks
 ```
-"Add a shortcut 'fast' for openai/gpt-4o-mini"
-```
-
-### Manage Favorites
-```
-"Add claude-3-opus to my favorites"
-"Show my OpenRouter config"
+"Ask Codex to optimize this algorithm"
+"Have DeepSeek explain this regex"
+"Get Gemini's take on this SQL query"
 ```
 
-## 🔧 CLI Commands
+### Explore Models
+```
+"What models are available?"
+"Show me models good for coding"
+"Set my default to GPT-4o"
+```
 
-Manage your installation with these commands:
+## 🔧 Management
 
+### Check Your Setup
 ```bash
-./setup.sh              # Install/reinstall
-./setup.sh --set-key    # Change API key
-./setup.sh --show-key   # View current key (masked)
-./setup.sh --remove-key # Remove API key
-./setup.sh --uninstall  # Remove from Claude Code
-./setup.sh --help       # Show all options
+./setup.sh --show-key   # View API key (masked)
+./setup.sh --help       # All options
 ```
+
+### Change API Key
+```bash
+./setup.sh --set-key
+```
+
+Or just ask Claude: *"Change my OpenRouter API key"*
 
 ## 🗑️ Uninstall
 
-To completely remove OpenRouter MCP Server:
+### Step-by-Step
 
+**1. Open your terminal**
+- **Windows:** Open PowerShell or Command Prompt
+- **Mac:** Open Terminal (Applications → Utilities → Terminal)
+- **Linux:** Open your terminal
+
+**2. Navigate to where you installed it**
 ```bash
-# Run the uninstaller
+cd Claude_GPT_MCP
+```
+If you don't remember where, search for the folder or check where you cloned it.
+
+**3. Run the uninstaller**
+```bash
 ./setup.sh --uninstall
 ```
 
-This will:
-- Remove OpenRouter from Claude Code config
-- Optionally remove your API key
-- **Does NOT** delete the cloned repository
+**4. Follow the prompts**
+- It will ask to remove OpenRouter from Claude Code → **Yes**
+- It will ask to remove your API key → **Your choice** (Yes = removes from this machine)
 
-To also remove the repository:
+**5. Restart Claude Code**
+
+That's it! OpenRouter is removed.
+
+---
+
+### Optional: Delete the files completely
+
+After uninstalling, you can delete the folder:
+
 ```bash
+# Make sure you're NOT inside the folder first
 cd ..
+
+# Then delete it
 rm -rf Claude_GPT_MCP
 ```
 
 <details>
-<summary><b>Manual Uninstall</b></summary>
+<summary><b>Manual Uninstall (if the script doesn't work)</b></summary>
 
-If the uninstaller doesn't work:
+**Remove from Claude Code config:**
+```bash
+# Open the config file
+nano ~/.claude.json    # Mac/Linux
+notepad %USERPROFILE%\.claude.json   # Windows
+```
+Find and delete the `"openrouter": { ... }` section.
 
-1. **Remove from Claude Code config:**
-   ```bash
-   # Edit ~/.claude.json and remove the "openrouter" entry
-   nano ~/.claude.json
-   ```
+**Remove API key (optional):**
+```bash
+# Open your shell config
+nano ~/.bashrc    # or ~/.zshrc on Mac
+```
+Find and delete the line: `export OPENROUTER_API_KEY="..."`
 
-2. **Remove API key (optional):**
-   ```bash
-   # Edit your shell config and remove the OPENROUTER_API_KEY line
-   nano ~/.bashrc  # or ~/.zshrc
-   ```
-
-3. **Delete the repository:**
-   ```bash
-   rm -rf /path/to/Claude_GPT_MCP
-   ```
+**Delete the folder:**
+```bash
+rm -rf /path/to/Claude_GPT_MCP
+```
 
 </details>
 
-## 📁 Files & Locations
+## 📁 Where Things Live
 
-| File | Purpose |
-|------|---------|
-| `~/.claude.json` | Claude Code MCP server config |
-| `~/.config/openrouter-mcp/config.json` | Your preferences (default model, favorites, shortcuts) |
-| `~/.bashrc` or `~/.zshrc` | API key environment variable |
+| File | What it does |
+|------|--------------|
+| `~/.claude.json` | Tells Claude Code about OpenRouter |
+| `~/.config/openrouter-mcp/config.json` | Your preferences (default model, etc.) |
+| `~/.bashrc` or `~/.zshrc` | Your API key |
 
 ## 🐛 Troubleshooting
 
-### "OPENROUTER_API_KEY not set"
+**"OPENROUTER_API_KEY not set"**
 ```bash
-./setup.sh --show-key   # Check if key exists
-./setup.sh --set-key    # Set a new key
+./setup.sh --set-key
 ```
 
-### MCP server not loading
+**MCP not loading**
 ```bash
-claude --mcp-debug      # See detailed MCP logs
+claude --mcp-debug
 ```
 
-### Model not found
+**Model not found**
 ```
-"List models matching 'gpt'"   # Search for available models
+"What models are available?"
 ```
-
-### Check your config
-```
-"Show my OpenRouter config"    # View current settings
-```
-
-## 🤝 Contributing
-
-Contributions welcome! Please feel free to submit issues and pull requests.
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
 
-**Built for the Claude Code community**
+**Built for Claude Code users who want more perspectives**
 
 [Report Issue](https://github.com/stefans71/Claude_GPT_MCP/issues) •
-[OpenRouter Docs](https://openrouter.ai/docs)
+[OpenRouter](https://openrouter.ai)
 
 </div>

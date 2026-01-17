@@ -489,7 +489,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: "text",
-              text: `Default model set to: **${resolvedId}**\n\nThis will be used when no model is specified in ask_model.`,
+              text: `**Default model set to:** ${resolvedId}\n\nQueries will now use this model (via your OpenRouter API key). No restart needed.`,
             },
           ],
         };

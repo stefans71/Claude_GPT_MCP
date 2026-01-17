@@ -62,7 +62,7 @@ spinner() {
             sleep $delay
         done
     done
-    printf "\r"
+    printf "\r                                                  \r"
 }
 
 # Show usage
@@ -238,6 +238,9 @@ uninstall() {
 full_install() {
     print_banner
 
+    echo -e "  ${DIM}You can run this while Claude Code is open.${NC}"
+    echo -e "  ${DIM}Just restart Claude Code when setup completes.${NC}"
+
     local TOTAL_STEPS=4
 
     # Step 1: Check requirements
@@ -311,8 +314,18 @@ full_install() {
     SERVER_PATH="$SCRIPT_DIR/dist/index.js"
     CLAUDE_CONFIG="$HOME/.claude.json"
 
+    # Check if already configured
+    if [ -f "$CLAUDE_CONFIG" ] && grep -q "openrouter" "$CLAUDE_CONFIG" 2>/dev/null; then
+        echo -e "  $CHECK ${GREEN}OpenRouter is ready to use!${NC}"
+        echo ""
+        echo -e "  ${DIM}Already configured in Claude Code.${NC}"
+        echo -e "  ${DIM}Just restart Claude Code if you haven't already.${NC}"
+        print_complete
+        return 0
+    fi
+
     if [ -f "$CLAUDE_CONFIG" ]; then
-        echo -e "  $INFO Existing config found"
+        echo -e "  $INFO Existing Claude config found"
     else
         echo -e "  $INFO No config file yet"
     fi
@@ -381,17 +394,17 @@ print_complete() {
     echo -e "${CYAN}║${NC}  ${GREEN}${BOLD}✓ Setup Complete!${NC}                                        ${CYAN}║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "  ${BOLD}Next steps:${NC}"
-    echo -e "  ${DIM}1.${NC} Restart Claude Code"
-    echo -e "  ${DIM}2.${NC} Try: ${CYAN}\"Ask GPT-4o what it thinks about this code\"${NC}"
+    echo -e "  ${BOLD}What now?${NC}"
     echo ""
-    echo -e "  ${BOLD}Commands:${NC}"
-    echo -e "  ${DIM}├${NC} ${CYAN}./setup.sh --help${NC}       Show all options"
-    echo -e "  ${DIM}├${NC} ${CYAN}./setup.sh --show-key${NC}   Check API key"
-    echo -e "  ${DIM}└${NC} ${CYAN}./setup.sh --uninstall${NC}  Remove from Claude Code"
+    echo -e "  ${DIM}1.${NC} Close and reopen Claude Code (or run ${CYAN}claude${NC} in a new terminal)"
+    echo -e "  ${DIM}2.${NC} Chat normally - Claude now has access to other AI models"
     echo ""
-    echo -e "  ${BOLD}Documentation:${NC}"
-    echo -e "  ${CYAN}https://github.com/stefans71/Claude_GPT_MCP${NC}"
+    echo -e "  ${BOLD}Get a second opinion from other AI models:${NC}"
+    echo -e "  ${DIM}•${NC} ${CYAN}\"Ask GPT-4o to review my plan\"${NC}"
+    echo -e "  ${DIM}•${NC} ${CYAN}\"What would Gemini do differently?\"${NC}"
+    echo -e "  ${DIM}•${NC} ${CYAN}\"Have DeepSeek check this for bugs\"${NC}"
+    echo ""
+    echo -e "  ${DIM}Docs & help: ${CYAN}https://github.com/stefans71/Claude_GPT_MCP${NC}"
     echo ""
 }
 
