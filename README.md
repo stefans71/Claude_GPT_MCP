@@ -138,6 +138,29 @@ cd Claude_GPT_MCP
 ./setup.sh
 ```
 
+### Option C: Install on a VPS/Remote Server
+
+If Claude Code is already installed on your VPS:
+
+```bash
+# SSH into your server
+ssh user@your-server.com
+
+# Clone and install
+git clone https://github.com/stefans71/Claude_GPT_MCP.git
+cd Claude_GPT_MCP
+./setup.sh
+```
+
+**VPS Notes:**
+- Your OpenRouter API key will be stored on the VPS (in `~/.bashrc` or `~/.zshrc`)
+- The `~/.claude.json` config is also on the VPS
+- If running Claude Code headlessly, you may need to source your shell config after setup:
+  ```bash
+  source ~/.bashrc  # or ~/.zshrc
+  ```
+- For Docker/containerized Claude: mount the config files or set `OPENROUTER_API_KEY` as an environment variable
+
 ---
 
 The installer handles everything:
