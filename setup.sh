@@ -1,4 +1,4 @@
-#!/here bin/bash
+#!/bin/bash
 
 # OpenRouter MCP Server Setup Script
 # Polished installer with key management
