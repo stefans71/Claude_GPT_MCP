@@ -6,18 +6,48 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 
 // OpenRouter API configuration
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
 
-// Popular models available on OpenRouter
-const AVAILABLE_MODELS: Record<string, string> = {
-  "gpt-5.2-codex": "openai/gpt-5.2-codex",
+// Config file path
+const CONFIG_DIR = join(homedir(), ".config", "openrouter-mcp");
+const CONFIG_FILE = join(CONFIG_DIR, "config.json");
+
+// Default model shortcuts (fallback if API fails)
+const DEFAULT_SHORTCUTS: Record<string, string> = {
   "gpt-4o": "openai/gpt-4o",
-  "gemini-2-pro": "google/gemini-2.0-pro",
-  "deepseek-v3": "deepseek/deepseek-chat-v3",
-  "llama-4-maverick": "meta-llama/llama-4-maverick",
+  "gpt-4-turbo": "openai/gpt-4-turbo",
+  "claude-3-opus": "anthropic/claude-3-opus",
+  "claude-3-sonnet": "anthropic/claude-3-sonnet",
+  "gemini-pro": "google/gemini-pro",
+  "deepseek-chat": "deepseek/deepseek-chat",
+  "llama-3-70b": "meta-llama/llama-3-70b-instruct",
 };
+
+interface UserConfig {
+  defaultModel?: string;
+  favoriteModels?: string[];
+  shortcuts?: Record<string, string>;
+}
+
+interface OpenRouterModel {
+  id: string;
+  name: string;
+  description?: string;
+  pricing?: {
+    prompt: string;
+    completion: string;
+  };
+  context_length?: number;
+  top_provider?: {
+    max_completion_tokens?: number;
+  };
+}
 
 interface OpenRouterResponse {
   choices: Array<{
@@ -35,6 +65,81 @@ interface OpenRouterResponse {
   };
 }
 
+// Cached models list
+let cachedModels: OpenRouterModel[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour cache
+
+// Load user config
+function loadConfig(): UserConfig {
+  try {
+    if (existsSync(CONFIG_FILE)) {
+      const data = readFileSync(CONFIG_FILE, "utf-8");
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error("Error loading config:", error);
+  }
+  return {};
+}
+
+// Save user config
+function saveConfig(config: UserConfig): void {
+  try {
+    if (!existsSync(CONFIG_DIR)) {
+      mkdirSync(CONFIG_DIR, { recursive: true });
+    }
+    writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  } catch (error) {
+    console.error("Error saving config:", error);
+    throw new Error(`Failed to save config: ${error}`);
+  }
+}
+
+// Fetch models from OpenRouter API
+async function fetchModels(apiKey?: string): Promise<OpenRouterModel[]> {
+  const key = apiKey || process.env.OPENROUTER_API_KEY;
+
+  if (!key) {
+    throw new Error("OPENROUTER_API_KEY not set");
+  }
+
+  // Return cached if still valid
+  if (cachedModels && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return cachedModels;
+  }
+
+  const response = await fetch(OPENROUTER_MODELS_URL, {
+    headers: {
+      Authorization: `Bearer ${key}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as { data: OpenRouterModel[] };
+  cachedModels = data.data || [];
+  cacheTimestamp = Date.now();
+
+  return cachedModels;
+}
+
+// Get model ID from shortcut or full ID
+function resolveModelId(model: string, config: UserConfig): string {
+  // Check user shortcuts first
+  if (config.shortcuts?.[model]) {
+    return config.shortcuts[model];
+  }
+  // Check default shortcuts
+  if (DEFAULT_SHORTCUTS[model]) {
+    return DEFAULT_SHORTCUTS[model];
+  }
+  // Assume it's a full model ID
+  return model;
+}
+
 async function queryOpenRouter(
   model: string,
   prompt: string,
@@ -49,7 +154,8 @@ async function queryOpenRouter(
     );
   }
 
-  const modelId = AVAILABLE_MODELS[model] || model;
+  const config = loadConfig();
+  const modelId = resolveModelId(model, config);
 
   const messages = [];
 
@@ -116,7 +222,7 @@ async function queryOpenRouter(
 const server = new Server(
   {
     name: "openrouter-bridge",
-    version: "1.0.0",
+    version: "1.1.0",
   },
   {
     capabilities: {
@@ -127,6 +233,9 @@ const server = new Server(
 
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  const config = loadConfig();
+  const defaultModel = config.defaultModel || "gpt-4o";
+
   return {
     tools: [
       {
@@ -138,7 +247,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             model: {
               type: "string",
-              description: `Model to query. Shortcuts: ${Object.keys(AVAILABLE_MODELS).join(", ")}. Or use full OpenRouter model ID.`,
+              description: `Model to query. Use shortcuts like: ${Object.keys(DEFAULT_SHORTCUTS).slice(0, 5).join(", ")}. Or use any full OpenRouter model ID. Default: ${defaultModel}`,
             },
             prompt: {
               type: "string",
@@ -150,34 +259,92 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 "Optional context about the current task, code, or conversation to include",
             },
           },
-          required: ["model", "prompt"],
+          required: ["prompt"],
         },
       },
       {
         name: "list_models",
-        description: "List available model shortcuts and their OpenRouter IDs",
+        description: "List available models from OpenRouter with pricing info",
+        inputSchema: {
+          type: "object",
+          properties: {
+            filter: {
+              type: "string",
+              description: "Optional filter to search model names/IDs (e.g., 'gpt', 'claude', 'llama')",
+            },
+            limit: {
+              type: "number",
+              description: "Max number of models to return (default: 20)",
+            },
+          },
+        },
+      },
+      {
+        name: "set_default_model",
+        description: "Set the default model for ask_model queries",
+        inputSchema: {
+          type: "object",
+          properties: {
+            model: {
+              type: "string",
+              description: "Model ID or shortcut to set as default",
+            },
+          },
+          required: ["model"],
+        },
+      },
+      {
+        name: "get_config",
+        description: "Get current OpenRouter MCP configuration (default model, favorites, shortcuts)",
         inputSchema: {
           type: "object",
           properties: {},
         },
       },
       {
-        name: "ask_codex",
-        description:
-          "Quick shortcut to ask GPT-5.2 Codex specifically. Great for code review and alternative implementations.",
+        name: "add_shortcut",
+        description: "Add a custom model shortcut for easier access",
         inputSchema: {
           type: "object",
           properties: {
-            prompt: {
+            shortcut: {
               type: "string",
-              description: "The question or prompt for Codex",
+              description: "Short name for the model (e.g., 'codex', 'fast')",
             },
-            context: {
+            model_id: {
               type: "string",
-              description: "Optional context about current code or task",
+              description: "Full OpenRouter model ID (e.g., 'openai/gpt-4o')",
             },
           },
-          required: ["prompt"],
+          required: ["shortcut", "model_id"],
+        },
+      },
+      {
+        name: "add_favorite",
+        description: "Add a model to your favorites list",
+        inputSchema: {
+          type: "object",
+          properties: {
+            model: {
+              type: "string",
+              description: "Model ID or shortcut to add to favorites",
+            },
+          },
+          required: ["model"],
+        },
+      },
+      {
+        name: "remove_favorite",
+        description: "Remove a model from your favorites list",
+        inputSchema: {
+          type: "object",
+          properties: {
+            model: {
+              type: "string",
+              description: "Model ID or shortcut to remove from favorites",
+            },
+          },
+          required: ["model"],
         },
       },
     ],
@@ -197,65 +364,268 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           context?: unknown;
         };
 
-        if (typeof model !== "string" || model.trim() === "") {
-          return {
-            content: [{ type: "text", text: "Error: 'model' is required and must be a non-empty string." }],
-            isError: true,
-          };
-        }
         if (typeof prompt !== "string" || prompt.trim() === "") {
           return {
             content: [{ type: "text", text: "Error: 'prompt' is required and must be a non-empty string." }],
             isError: true,
           };
         }
+
+        // Use default model if not specified
+        const config = loadConfig();
+        const selectedModel = typeof model === "string" && model.trim() !== ""
+          ? model
+          : config.defaultModel || "gpt-4o";
+
         const validContext = typeof context === "string" ? context : undefined;
 
-        const response = await queryOpenRouter(model, prompt, validContext);
+        const response = await queryOpenRouter(selectedModel, prompt, validContext);
         return {
           content: [
             {
               type: "text",
-              text: `**Response from ${model}:**\n\n${response}`,
+              text: `**Response from ${selectedModel}:**\n\n${response}`,
             },
           ],
         };
       }
 
       case "list_models": {
-        const modelList = Object.entries(AVAILABLE_MODELS)
-          .map(([shortcut, id]) => `- \`${shortcut}\` → ${id}`)
-          .join("\n");
+        const { filter, limit } = args as {
+          filter?: unknown;
+          limit?: unknown;
+        };
+
+        try {
+          const models = await fetchModels();
+          let filtered = models;
+
+          // Apply filter if provided
+          if (typeof filter === "string" && filter.trim() !== "") {
+            const f = filter.toLowerCase();
+            filtered = models.filter(
+              (m) =>
+                m.id.toLowerCase().includes(f) ||
+                m.name.toLowerCase().includes(f)
+            );
+          }
+
+          // Sort by name
+          filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+          // Apply limit
+          const maxResults = typeof limit === "number" ? limit : 20;
+          filtered = filtered.slice(0, maxResults);
+
+          if (filtered.length === 0) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: filter
+                    ? `No models found matching "${filter}".`
+                    : "No models available.",
+                },
+              ],
+            };
+          }
+
+          const modelList = filtered
+            .map((m) => {
+              const price = m.pricing
+                ? `$${parseFloat(m.pricing.prompt) * 1000000}/M in, $${parseFloat(m.pricing.completion) * 1000000}/M out`
+                : "pricing N/A";
+              const ctx = m.context_length ? `${Math.round(m.context_length / 1000)}k ctx` : "";
+              return `- **${m.id}**\n  ${m.name} | ${price} | ${ctx}`;
+            })
+            .join("\n\n");
+
+          const total = models.length;
+          const shown = filtered.length;
+          const footer = shown < total
+            ? `\n\n_Showing ${shown} of ${total} models. Use filter to narrow results._`
+            : "";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `**Available OpenRouter Models:**\n\n${modelList}${footer}`,
+              },
+            ],
+          };
+        } catch (error) {
+          // Fallback to default shortcuts if API fails
+          const shortcutList = Object.entries(DEFAULT_SHORTCUTS)
+            .map(([shortcut, id]) => `- \`${shortcut}\` → ${id}`)
+            .join("\n");
+          return {
+            content: [
+              {
+                type: "text",
+                text: `**Available shortcuts (API unavailable):**\n\n${shortcutList}\n\nYou can also use any full OpenRouter model ID directly.`,
+              },
+            ],
+          };
+        }
+      }
+
+      case "set_default_model": {
+        const { model } = args as { model?: unknown };
+
+        if (typeof model !== "string" || model.trim() === "") {
+          return {
+            content: [{ type: "text", text: "Error: 'model' is required." }],
+            isError: true,
+          };
+        }
+
+        const config = loadConfig();
+        const resolvedId = resolveModelId(model, config);
+        config.defaultModel = resolvedId;
+        saveConfig(config);
+
         return {
           content: [
             {
               type: "text",
-              text: `**Available model shortcuts:**\n\n${modelList}\n\nYou can also use any full OpenRouter model ID directly.`,
+              text: `Default model set to: **${resolvedId}**\n\nThis will be used when no model is specified in ask_model.`,
             },
           ],
         };
       }
 
-      case "ask_codex": {
-        const { prompt, context } = args as {
-          prompt?: unknown;
-          context?: unknown;
+      case "get_config": {
+        const config = loadConfig();
+        const lines = [
+          "**OpenRouter MCP Configuration:**",
+          "",
+          `**Default Model:** ${config.defaultModel || "gpt-4o (built-in default)"}`,
+          "",
+          "**Favorites:**",
+        ];
+
+        if (config.favoriteModels && config.favoriteModels.length > 0) {
+          config.favoriteModels.forEach((m) => lines.push(`- ${m}`));
+        } else {
+          lines.push("_No favorites set_");
+        }
+
+        lines.push("", "**Custom Shortcuts:**");
+        if (config.shortcuts && Object.keys(config.shortcuts).length > 0) {
+          Object.entries(config.shortcuts).forEach(([k, v]) => {
+            lines.push(`- \`${k}\` → ${v}`);
+          });
+        } else {
+          lines.push("_No custom shortcuts_");
+        }
+
+        lines.push("", "**Built-in Shortcuts:**");
+        Object.entries(DEFAULT_SHORTCUTS).forEach(([k, v]) => {
+          lines.push(`- \`${k}\` → ${v}`);
+        });
+
+        lines.push("", `**Config file:** ${CONFIG_FILE}`);
+
+        return {
+          content: [{ type: "text", text: lines.join("\n") }],
+        };
+      }
+
+      case "add_shortcut": {
+        const { shortcut, model_id } = args as {
+          shortcut?: unknown;
+          model_id?: unknown;
         };
 
-        if (typeof prompt !== "string" || prompt.trim() === "") {
+        if (typeof shortcut !== "string" || shortcut.trim() === "") {
           return {
-            content: [{ type: "text", text: "Error: 'prompt' is required and must be a non-empty string." }],
+            content: [{ type: "text", text: "Error: 'shortcut' is required." }],
             isError: true,
           };
         }
-        const validContext = typeof context === "string" ? context : undefined;
+        if (typeof model_id !== "string" || model_id.trim() === "") {
+          return {
+            content: [{ type: "text", text: "Error: 'model_id' is required." }],
+            isError: true,
+          };
+        }
 
-        const response = await queryOpenRouter("gpt-5.2-codex", prompt, validContext);
+        const config = loadConfig();
+        config.shortcuts = config.shortcuts || {};
+        config.shortcuts[shortcut.trim()] = model_id.trim();
+        saveConfig(config);
+
         return {
           content: [
             {
               type: "text",
-              text: `**Response from GPT-5.2 Codex:**\n\n${response}`,
+              text: `Shortcut added: \`${shortcut}\` → ${model_id}`,
+            },
+          ],
+        };
+      }
+
+      case "add_favorite": {
+        const { model } = args as { model?: unknown };
+
+        if (typeof model !== "string" || model.trim() === "") {
+          return {
+            content: [{ type: "text", text: "Error: 'model' is required." }],
+            isError: true,
+          };
+        }
+
+        const config = loadConfig();
+        const resolvedId = resolveModelId(model, config);
+        config.favoriteModels = config.favoriteModels || [];
+
+        if (config.favoriteModels.includes(resolvedId)) {
+          return {
+            content: [{ type: "text", text: `${resolvedId} is already in favorites.` }],
+          };
+        }
+
+        config.favoriteModels.push(resolvedId);
+        saveConfig(config);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Added to favorites: **${resolvedId}**`,
+            },
+          ],
+        };
+      }
+
+      case "remove_favorite": {
+        const { model } = args as { model?: unknown };
+
+        if (typeof model !== "string" || model.trim() === "") {
+          return {
+            content: [{ type: "text", text: "Error: 'model' is required." }],
+            isError: true,
+          };
+        }
+
+        const config = loadConfig();
+        const resolvedId = resolveModelId(model, config);
+
+        if (!config.favoriteModels || !config.favoriteModels.includes(resolvedId)) {
+          return {
+            content: [{ type: "text", text: `${resolvedId} is not in favorites.` }],
+          };
+        }
+
+        config.favoriteModels = config.favoriteModels.filter((m) => m !== resolvedId);
+        saveConfig(config);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Removed from favorites: **${resolvedId}**`,
             },
           ],
         };

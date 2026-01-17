@@ -1,124 +1,162 @@
-# OpenRouter MCP Server Setup
+# OpenRouter MCP Server for Claude Code
 
-This MCP server bridges Claude Code to OpenRouter, allowing you to query other AI models (GPT-5.2 Codex, Gemini, etc.) without leaving your Claude session.
+This MCP server bridges Claude Code to OpenRouter, allowing you to query other AI models (GPT-4o, Gemini, DeepSeek, Llama, etc.) without leaving your Claude session.
 
 ## Prerequisites
 
-- Node.js 18+
-- OpenRouter API key (get one at https://openrouter.ai/keys)
+Before installing, you need:
 
-## Installation
+| Requirement | Description | Get it at |
+|-------------|-------------|-----------|
+| **Claude Code CLI** | Requires Max Pro subscription OR Anthropic API key | [claude.ai/code](https://claude.ai/code) |
+| **Node.js 18+** | JavaScript runtime | [nodejs.org](https://nodejs.org) |
+| **OpenRouter account** | With credits for API usage | [openrouter.ai](https://openrouter.ai) |
+| **OpenRouter API key** | For authenticating requests | [openrouter.ai/keys](https://openrouter.ai/keys) |
 
-```bash
-# 1. Navigate to the server directory
-cd /path/to/openrouter-mcp-server
-
-# 2. Install dependencies
-npm install
-
-# 3. Build the server
-npm run build
-```
-
-## Configuration
-
-### Step 1: Set your OpenRouter API key
-
-Add to your shell profile (~/.bashrc, ~/.zshrc, etc.):
+## Quick Start
 
 ```bash
-export OPENROUTER_API_KEY="sk-or-v1-your-key-here"
+# Clone and setup
+git clone <this-repo>
+cd Claude_GPT_MCP
+./setup.sh
 ```
 
-### Step 2: Add to Claude Code MCP config
+The setup script will:
+1. Check Node.js version
+2. Install dependencies
+3. Build the TypeScript
+4. Prompt for your OpenRouter API key
+5. Show the Claude Code configuration
 
-Edit `~/.claude/claude_desktop_config.json` (create if it doesn't exist):
+## Key Management
+
+```bash
+./setup.sh              # Fresh install (build + prompt for key)
+./setup.sh --set-key    # Add or change API key
+./setup.sh --show-key   # Show current key (masked: sk-or-v1...xxxx)
+./setup.sh --remove-key # Remove stored API key
+./setup.sh --help       # Show help
+```
+
+## Claude Code Configuration
+
+Add to `~/.claude.json`:
 
 ```json
 {
   "mcpServers": {
     "openrouter": {
       "command": "node",
-      "args": ["/absolute/path/to/openrouter-mcp-server/dist/index.js"],
-      "env": {
-        "OPENROUTER_API_KEY": "sk-or-v1-your-key-here"
-      }
+      "args": ["/path/to/Claude_GPT_MCP/dist/index.js"]
     }
   }
 }
 ```
 
-Or if you prefer using the environment variable:
+Then restart Claude Code: `claude --mcp-debug`
 
-```json
-{
-  "mcpServers": {
-    "openrouter": {
-      "command": "node",
-      "args": ["/absolute/path/to/openrouter-mcp-server/dist/index.js"]
-    }
-  }
-}
-```
+## Available MCP Tools
 
-### Step 3: Restart Claude Code
-
-```bash
-claude --mcp-debug  # Use debug flag to verify MCP loads correctly
-```
-
-## Usage
-
-Once configured, Claude will have access to these tools:
+Once configured, Claude has access to these tools:
 
 ### `ask_model`
 Query any OpenRouter model:
 ```
-"Ask GPT-5.2 Codex to review this function for edge cases"
+"Ask GPT-4o to review this function for edge cases"
 "Get Gemini's opinion on this architecture"
-```
-
-### `ask_codex`
-Quick shortcut for GPT-5.2 Codex:
-```
-"Ask Codex if there's a more efficient algorithm for this"
+"Ask DeepSeek for an alternative implementation"
 ```
 
 ### `list_models`
-See available model shortcuts:
+List available models with pricing:
 ```
-"What models are available through OpenRouter?"
+"What models are available on OpenRouter?"
+"List models that match 'llama'"
 ```
 
-## Available Model Shortcuts
+### `set_default_model`
+Set your preferred default model:
+```
+"Set my default model to gpt-4o"
+```
+
+### `get_config`
+View current configuration:
+```
+"Show my OpenRouter config"
+```
+
+### `add_shortcut`
+Create custom model shortcuts:
+```
+"Add a shortcut 'fast' for openai/gpt-4o-mini"
+```
+
+### `add_favorite` / `remove_favorite`
+Manage your favorites list:
+```
+"Add claude-3-opus to my favorites"
+```
+
+## Slash Commands
+
+If you copy `.claude/commands/` to your project, you get:
+
+| Command | Description |
+|---------|-------------|
+| `/models` | List available OpenRouter models |
+| `/models gpt` | Filter models by name |
+| `/model` | Show current config |
+| `/model gpt-4o` | Set default model |
+
+## Built-in Shortcuts
 
 | Shortcut | OpenRouter Model ID |
 |----------|---------------------|
-| `gpt-5.2-codex` | openai/gpt-5.2-codex |
 | `gpt-4o` | openai/gpt-4o |
-| `gemini-2-pro` | google/gemini-2.0-pro |
-| `deepseek-v3` | deepseek/deepseek-chat-v3 |
-| `llama-4-maverick` | meta-llama/llama-4-maverick |
+| `gpt-4-turbo` | openai/gpt-4-turbo |
+| `claude-3-opus` | anthropic/claude-3-opus |
+| `claude-3-sonnet` | anthropic/claude-3-sonnet |
+| `gemini-pro` | google/gemini-pro |
+| `deepseek-chat` | deepseek/deepseek-chat |
+| `llama-3-70b` | meta-llama/llama-3-70b-instruct |
 
 You can also use any full OpenRouter model ID directly.
+
+## Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `~/.config/openrouter-mcp/config.json` | User preferences (default model, favorites, shortcuts) |
+| `~/.bashrc` or `~/.zshrc` | API key environment variable |
 
 ## Example Workflow
 
 ```
-You: "I'm not sure if this caching strategy is optimal. Ask Codex for a second opinion."
+You: "I'm not sure if this caching strategy is optimal. Ask GPT-4o for a second opinion."
 
-Claude: [Uses ask_codex tool with your code as context]
+Claude: [Uses ask_model tool with your code as context]
 
-Claude: "Codex suggests using an LRU cache instead of TTL-based expiration because..."
+Claude: "GPT-4o suggests using an LRU cache instead of TTL-based expiration because..."
 ```
 
 ## Troubleshooting
 
 ### "OPENROUTER_API_KEY not set"
-Ensure the key is set in your environment or in the MCP config's `env` block.
+```bash
+./setup.sh --show-key  # Check if key is set
+./setup.sh --set-key   # Set/update the key
+source ~/.bashrc       # Reload shell config
+```
 
 ### MCP server not loading
-Run `claude --mcp-debug` to see detailed MCP loading logs.
+```bash
+claude --mcp-debug  # See detailed MCP loading logs
+```
+
+### Model not found
+Use `list_models` to see available models, or check [openrouter.ai/models](https://openrouter.ai/models).
 
 ### Rate limits
-OpenRouter has rate limits per model. If you hit them, wait a moment or try a different model.
+OpenRouter has rate limits per model. If you hit them, wait or try a different model.
