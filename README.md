@@ -104,12 +104,16 @@ No special commands needed. Just say "ask GPT-4o", "have Gemini review", "get De
 ### Option A: Download ZIP (no git needed)
 
 1. **Download:** [Click here to download ZIP](https://github.com/stefans71/Claude_GPT_MCP/archive/refs/heads/main.zip)
-2. **Extract** the ZIP file
-3. **Open terminal** in the extracted folder
-4. **Run:**
+2. **Extract** the ZIP file (you'll get `Claude_GPT_MCP-main` folder)
+3. **Open terminal in that folder:**
+   - **Windows:** Right-click folder → "Open in Terminal"
+   - **Mac:** Right-click folder → "New Terminal at Folder"
+   - **Linux:** Right-click → "Open Terminal Here"
+4. **Run the installer:**
    ```bash
    ./setup.sh
    ```
+   Windows users may need: `bash setup.sh`
 
 ### Option B: Clone with git
 
