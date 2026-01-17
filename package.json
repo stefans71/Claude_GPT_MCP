@@ -2,8 +2,31 @@
   "name": "openrouter-mcp-server",
   "version": "1.0.0",
   "description": "MCP server that bridges Claude Code to OpenRouter API for multi-model workflows",
+  "author": "stefans71",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stefans71/Claude_GPT_MCP"
+  },
+  "keywords": [
+    "mcp",
+    "openrouter",
+    "claude",
+    "claude-code",
+    "llm",
+    "gpt",
+    "gemini",
+    "ai",
+    "multi-model"
+  ],
   "main": "dist/index.js",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",

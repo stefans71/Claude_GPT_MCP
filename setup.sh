@@ -21,10 +21,24 @@ CROSS="${RED}✗${NC}"
 ARROW="${CYAN}→${NC}"
 INFO="${BLUE}ℹ${NC}"
 
-# Determine shell config file
+# Portable sed -i (macOS compatibility)
+sed_inplace() {
+    if sed --version >/dev/null 2>&1; then
+        # GNU sed
+        sed -i "$@"
+    else
+        # BSD sed (macOS)
+        sed -i '' "$@"
+    fi
+}
+
+# Determine shell config file (with bash_profile support for macOS)
 get_shell_config() {
     if [ -f "$HOME/.zshrc" ]; then
         echo "$HOME/.zshrc"
+    elif [ -f "$HOME/.bash_profile" ]; then
+        # macOS uses bash_profile for login shells
+        echo "$HOME/.bash_profile"
     elif [ -f "$HOME/.bashrc" ]; then
         echo "$HOME/.bashrc"
     else
@@ -92,7 +106,8 @@ show_key() {
     fi
 
     if grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
-        KEY=$(grep "OPENROUTER_API_KEY" "$SHELL_CONFIG" | sed 's/.*"\(.*\)".*/\1/' | tail -1)
+        # Extract key - handle both double and single quotes
+        KEY=$(grep "OPENROUTER_API_KEY" "$SHELL_CONFIG" | sed "s/.*[\"']\([^\"']*\)[\"'].*/\1/" | tail -1)
         if [ -n "$KEY" ]; then
             PREFIX="${KEY:0:10}"
             SUFFIX="${KEY: -4}"
@@ -135,8 +150,8 @@ set_key() {
 
     # Remove existing
     if grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
-        sed -i '/# OpenRouter API Key/d' "$SHELL_CONFIG"
-        sed -i '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
+        sed_inplace '/# OpenRouter API Key/d' "$SHELL_CONFIG"
+        sed_inplace '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
     fi
 
     # Add new
@@ -173,8 +188,8 @@ remove_key() {
         return 0
     fi
 
-    sed -i '/# OpenRouter API Key/d' "$SHELL_CONFIG"
-    sed -i '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
+    sed_inplace '/# OpenRouter API Key/d' "$SHELL_CONFIG"
+    sed_inplace '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
 
     echo -e "  $CHECK ${GREEN}API key removed${NC}"
     echo ""
@@ -242,6 +257,9 @@ full_install() {
     echo -e "  ${DIM}Just restart Claude Code when setup completes.${NC}"
 
     local TOTAL_STEPS=4
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SERVER_PATH="$SCRIPT_DIR/dist/index.js"
+    CLAUDE_CONFIG="$HOME/.claude.json"
 
     # Step 1: Check requirements
     step 1 $TOTAL_STEPS "Checking requirements"
@@ -270,13 +288,32 @@ full_install() {
 
     echo -e "  ${DIM}Installing dependencies...${NC}"
     npm install --silent 2>/dev/null &
-    spinner $! "Installing dependencies..."
+    local npm_pid=$!
+    spinner $npm_pid "Installing dependencies..."
+    if ! wait $npm_pid; then
+        echo -e "  $CROSS ${RED}npm install failed${NC}"
+        echo -e "     Run ${CYAN}npm install${NC} manually to see errors"
+        exit 1
+    fi
     echo -e "  $CHECK Dependencies installed"
 
     echo -e "  ${DIM}Compiling TypeScript...${NC}"
     npm run build --silent 2>/dev/null &
-    spinner $! "Compiling TypeScript..."
+    local build_pid=$!
+    spinner $build_pid "Compiling TypeScript..."
+    if ! wait $build_pid; then
+        echo -e "  $CROSS ${RED}Build failed${NC}"
+        echo -e "     Run ${CYAN}npm run build${NC} manually to see errors"
+        exit 1
+    fi
     echo -e "  $CHECK Build complete"
+
+    # Verify build output exists
+    if [ ! -f "$SCRIPT_DIR/dist/index.js" ]; then
+        echo -e "  $CROSS ${RED}Build output not found${NC}"
+        echo -e "     Expected: ${CYAN}dist/index.js${NC}"
+        exit 1
+    fi
 
     # Step 3: API Key
     step 3 $TOTAL_STEPS "API key configuration"
@@ -310,21 +347,25 @@ full_install() {
     # Step 4: Claude Code config
     step 4 $TOTAL_STEPS "Claude Code integration"
 
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    SERVER_PATH="$SCRIPT_DIR/dist/index.js"
-    CLAUDE_CONFIG="$HOME/.claude.json"
-
-    # Check if already configured
-    if [ -f "$CLAUDE_CONFIG" ] && grep -q "openrouter" "$CLAUDE_CONFIG" 2>/dev/null; then
-        echo -e "  $CHECK ${GREEN}OpenRouter is ready to use!${NC}"
-        echo ""
-        echo -e "  ${DIM}Already configured in Claude Code.${NC}"
-        echo -e "  ${DIM}Just restart Claude Code if you haven't already.${NC}"
-        print_complete
-        return 0
-    fi
-
+    # Check if already configured (use jq if available for accurate check)
     if [ -f "$CLAUDE_CONFIG" ]; then
+        local already_configured=false
+        if command -v jq &> /dev/null; then
+            if jq -e '.mcpServers.openrouter' "$CLAUDE_CONFIG" >/dev/null 2>&1; then
+                already_configured=true
+            fi
+        elif grep -q '"openrouter"' "$CLAUDE_CONFIG" 2>/dev/null; then
+            already_configured=true
+        fi
+
+        if [ "$already_configured" = true ]; then
+            echo -e "  $CHECK ${GREEN}OpenRouter is ready to use!${NC}"
+            echo ""
+            echo -e "  ${DIM}Already configured in Claude Code.${NC}"
+            echo -e "  ${DIM}Just restart Claude Code if you haven't already.${NC}"
+            print_complete
+            return 0
+        fi
         echo -e "  $INFO Existing Claude config found"
     else
         echo -e "  $INFO No config file yet"
@@ -344,20 +385,24 @@ full_install() {
         return 0
     fi
 
-    NEW_SERVER=$(cat << EOF
-{
-  "command": "node",
-  "args": ["$SERVER_PATH"]
-}
-EOF
-)
+    # Backup existing config before modification
+    if [ -f "$CLAUDE_CONFIG" ]; then
+        cp "$CLAUDE_CONFIG" "$CLAUDE_CONFIG.bak"
+    fi
 
     if command -v jq &> /dev/null; then
         if [ -f "$CLAUDE_CONFIG" ]; then
-            UPDATED=$(jq --argjson server "$NEW_SERVER" '.mcpServers.openrouter = $server' "$CLAUDE_CONFIG")
+            # Validate existing JSON before modifying
+            if ! jq empty "$CLAUDE_CONFIG" 2>/dev/null; then
+                echo -e "  $CROSS ${YELLOW}Warning: ~/.claude.json contains invalid JSON${NC}"
+                echo -e "     Backup saved to ${CYAN}~/.claude.json.bak${NC}"
+                echo -e "     Please fix the file manually and re-run setup"
+                exit 1
+            fi
+            UPDATED=$(jq --arg path "$SERVER_PATH" '.mcpServers.openrouter = {command: "node", args: [$path]}' "$CLAUDE_CONFIG")
             echo "$UPDATED" > "$CLAUDE_CONFIG"
         else
-            echo "{\"mcpServers\":{\"openrouter\":$NEW_SERVER}}" | jq '.' > "$CLAUDE_CONFIG"
+            jq -n --arg path "$SERVER_PATH" '{mcpServers: {openrouter: {command: "node", args: [$path]}}}' > "$CLAUDE_CONFIG"
         fi
         echo -e "  $CHECK ${GREEN}Added to Claude Code config${NC}"
     else
