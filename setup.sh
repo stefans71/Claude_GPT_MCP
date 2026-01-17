@@ -336,7 +336,22 @@ full_install() {
         echo -e "  $INFO No API key found"
         echo ""
         read -p "  Set up API key now? (Y/n): " SET_NOW
-        if [[ ! "$SET_NOW" =~ ^[Nn]$ ]]; then
+        # If user pasted their API key directly, use it
+        if [[ "$SET_NOW" =~ ^sk-or- ]]; then
+            echo ""
+            echo -e "  ${DIM}Detected API key input...${NC}"
+            # Remove existing
+            if grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
+                sed_inplace '/# OpenRouter API Key/d' "$SHELL_CONFIG"
+                sed_inplace '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
+            fi
+            # Add new
+            echo "" >> "$SHELL_CONFIG"
+            echo "# OpenRouter API Key (added by Claude_GPT_MCP setup)" >> "$SHELL_CONFIG"
+            echo "export OPENROUTER_API_KEY=\"$SET_NOW\"" >> "$SHELL_CONFIG"
+            export OPENROUTER_API_KEY="$SET_NOW"
+            echo -e "  $CHECK ${GREEN}API key saved${NC}"
+        elif [[ ! "$SET_NOW" =~ ^[Nn]$ ]]; then
             set_key
         else
             echo ""
