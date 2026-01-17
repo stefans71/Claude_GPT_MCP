@@ -19,12 +19,12 @@
 
 ## Why You'll Love This
 
-- **Instant code review** from GPT-4o without leaving Claude
+- **Instant code review** from GPT-5.2-Codex without leaving Claude
 - **Compare approaches** across different LLMs in one conversation
 - **Catch edge cases** by getting a second opinion in seconds
 - **Stay in flow** — no tab switching, no context loss
 
-> *"Ask GPT-4o to review this function"* — that's it. Claude handles the rest.
+> *"Ask GPT-5.2-Codex to review this function"* — that's it. Claude handles the rest.
 
 This MCP server lets Claude query **200+ models** via [OpenRouter](https://openrouter.ai/models) — all in the same conversation.
 
@@ -41,9 +41,9 @@ This MCP server lets Claude query **200+ models** via [OpenRouter](https://openr
                     └───────────┬─────────────┘
                                 │
           ┌─────────────────────▼─────────────────────┐
-          │  🐬 "Ask Codex to review this plan"       │
+          │  🐬 "Ask GPT-5.2-Codex to review this"    │
           │     ↓                                     │
-          │  OpenRouter → GPT-Codex → feedback        │
+          │  OpenRouter → GPT-5.2-Codex → feedback    │
           └─────────────────────┬─────────────────────┘
                                 │
                     ┌───────────▼─────────────┐
@@ -52,9 +52,9 @@ This MCP server lets Claude query **200+ models** via [OpenRouter](https://openr
                     └───────────┬─────────────┘
                                 │
           ┌─────────────────────▼─────────────────────┐
-          │  🐬 "Have Codex check the updated plan"   │
+          │  🐬 "Have GPT-5.2-Codex check this"       │
           │     ↓                                     │
-          │  OpenRouter → GPT-Codex → approval ✓     │
+          │  OpenRouter → GPT-5.2-Codex → approval ✓  │
           └─────────────────────┬─────────────────────┘
                                 │
                     ┌───────────▼─────────────┐
@@ -70,19 +70,19 @@ You: "Write a function to parse CSV files"
 
 Claude: [writes the function]
 
-You: "Ask GPT-4o if there's a better approach"
-      ~~~~~~ ← just name the model you want
+You: "Ask GPT-5.2-Codex if there's a better approach"
+      ~~~~~~~~~~~~~~ ← just name the model you want
 
-Claude: [calls OpenRouter API → GPT-4o]
+Claude: [calls OpenRouter API → GPT-5.2-Codex]
 
-Claude: "GPT-4o suggests using a streaming parser for large files..."
+Claude: "GPT-5.2-Codex suggests using a streaming parser for large files..."
 
 You: "Good idea, let's update it"
 
 Claude: [updates the code]
 ```
 
-No special commands needed. Just say "ask GPT-4o", "have Gemini review", "get DeepSeek's opinion" — Claude figures out which model to call.
+No special commands needed. Just say "ask GPT-5.2-Codex", "have Gemini review", "get DeepSeek's opinion" — Claude figures out which model to call.
 
 ## ✨ Features
 
@@ -139,20 +139,20 @@ The installer handles everything:
 
 ### Get a Second Opinion
 ```
-"Ask GPT-4o to review this function"
+"Ask GPT-5.2-Codex to review this function"
 "What would Gemini do differently here?"
 "Have DeepSeek check this for edge cases"
 ```
 
 ### Compare Approaches
 ```
-"Ask GPT-4o and Gemini how they'd implement this"
-"Get Claude and GPT-4o's opinion on this architecture"
+"Ask GPT-5.2-Codex and Gemini how they'd implement this"
+"Get Claude and GPT-5.2-Codex's opinion on this architecture"
 ```
 
 ### Specialized Tasks
 ```
-"Ask Codex to optimize this algorithm"
+"Ask GPT-5.2-Codex to optimize this algorithm"
 "Have DeepSeek explain this regex"
 "Get Gemini's take on this SQL query"
 ```
@@ -161,7 +161,7 @@ The installer handles everything:
 ```
 "What models are available?"
 "Show me models good for coding"
-"Set my default to GPT-4o"
+"Set my default to GPT-5.2-Codex"
 ```
 
 ## 🔧 Management
@@ -181,7 +181,19 @@ Or just ask Claude: *"Change my OpenRouter API key"*
 
 ## 🗑️ Uninstall
 
-### Step-by-Step
+### What Gets Removed?
+
+| Component | Removed? | Details |
+|-----------|----------|---------|
+| OpenRouter from Claude | **Yes** | Only the `"openrouter"` entry in `~/.claude.json` — your other Claude settings stay intact |
+| Your API key | **Optional** | You choose — the script asks before removing |
+| The folder | **Manual** | You delete it yourself after uninstalling |
+
+**Important:** This only removes OpenRouter. Your other Claude Code settings and API keys for other services are untouched.
+
+---
+
+### Using the Uninstaller Script
 
 **1. Open your terminal**
 - **Windows:** Open PowerShell or Command Prompt
@@ -189,10 +201,16 @@ Or just ask Claude: *"Change my OpenRouter API key"*
 - **Linux:** Open your terminal
 
 **2. Navigate to where you installed it**
+
+If you downloaded the ZIP:
 ```bash
-cd Claude_GPT_MCP
+cd ~/Downloads/Claude_GPT_MCP-main    # or wherever you extracted it
 ```
-If you don't remember where, search for the folder or check where you cloned it.
+
+If you cloned with git:
+```bash
+cd Claude_GPT_MCP    # or wherever you cloned it
+```
 
 **3. Run the uninstaller**
 ```bash
@@ -201,47 +219,91 @@ If you don't remember where, search for the folder or check where you cloned it.
 
 **4. Follow the prompts**
 - It will ask to remove OpenRouter from Claude Code → **Yes**
-- It will ask to remove your API key → **Your choice** (Yes = removes from this machine)
+- It will ask to remove your API key → **Your choice** (Yes = removes the `OPENROUTER_API_KEY` line from your shell config)
 
 **5. Restart Claude Code**
 
-That's it! OpenRouter is removed.
-
 ---
 
-### Optional: Delete the files completely
+### Delete the Files (Optional)
 
-After uninstalling, you can delete the folder:
+After running the uninstaller, you can delete the folder:
 
 ```bash
-# Make sure you're NOT inside the folder first
+# First, exit the folder
 cd ..
 
 # Then delete it
-rm -rf Claude_GPT_MCP
+rm -rf Claude_GPT_MCP-main    # if you used ZIP
+rm -rf Claude_GPT_MCP         # if you used git
 ```
+
+**Windows users:** Just delete the folder normally in File Explorer.
+
+---
 
 <details>
 <summary><b>Manual Uninstall (if the script doesn't work)</b></summary>
 
-**Remove from Claude Code config:**
-```bash
-# Open the config file
-nano ~/.claude.json    # Mac/Linux
-notepad %USERPROFILE%\.claude.json   # Windows
-```
-Find and delete the `"openrouter": { ... }` section.
+This works for both ZIP downloads and git clones.
 
-**Remove API key (optional):**
-```bash
-# Open your shell config
-nano ~/.bashrc    # or ~/.zshrc on Mac
-```
-Find and delete the line: `export OPENROUTER_API_KEY="..."`
+**Step 1: Remove OpenRouter from Claude Code config**
 
-**Delete the folder:**
+Open `~/.claude.json` in a text editor:
 ```bash
+# Mac/Linux
+nano ~/.claude.json
+
+# Windows (in PowerShell)
+notepad $env:USERPROFILE\.claude.json
+```
+
+Find and delete ONLY the `"openrouter": { ... }` section. Keep everything else.
+
+**Before:**
+```json
+{
+  "mcpServers": {
+    "openrouter": {
+      "command": "node",
+      "args": ["/path/to/dist/index.js"]
+    },
+    "other-server": { ... }
+  }
+}
+```
+
+**After:**
+```json
+{
+  "mcpServers": {
+    "other-server": { ... }
+  }
+}
+```
+
+**Step 2: Remove API key (optional)**
+
+Open your shell config:
+```bash
+# Mac
+nano ~/.zshrc
+
+# Linux
+nano ~/.bashrc
+```
+
+Find and delete the line:
+```
+export OPENROUTER_API_KEY="sk-or-..."
+```
+
+**Step 3: Delete the folder**
+```bash
+# Mac/Linux
 rm -rf /path/to/Claude_GPT_MCP
+
+# Windows - just delete the folder in File Explorer
 ```
 
 </details>
