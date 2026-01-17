@@ -148,17 +148,20 @@ set_key() {
         fi
     fi
 
-    # Remove existing
+    # Remove existing from shell config
     if grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
         sed_inplace '/# OpenRouter API Key/d' "$SHELL_CONFIG"
         sed_inplace '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
     fi
 
-    # Add new
+    # Add to shell config
     echo "" >> "$SHELL_CONFIG"
     echo "# OpenRouter API Key (added by Claude_GPT_MCP setup)" >> "$SHELL_CONFIG"
     echo "export OPENROUTER_API_KEY=\"$API_KEY\"" >> "$SHELL_CONFIG"
     export OPENROUTER_API_KEY="$API_KEY"
+
+    # Also save to MCP config as backup
+    save_mcp_config_key "$API_KEY"
 
     echo ""
     echo -e "  $CHECK ${GREEN}API key saved${NC}"
@@ -193,6 +196,85 @@ remove_key() {
 
     echo -e "  $CHECK ${GREEN}API key removed${NC}"
     echo ""
+}
+
+# Configure MCP server in Claude config with env vars
+configure_claude_mcp() {
+    local install_dir="$1"
+    local api_key="$2"
+    local claude_config="$HOME/.claude.json"
+
+    echo -e "  ${DIM}Configuring Claude MCP server...${NC}"
+
+    # Create config if doesn't exist
+    if [[ ! -f "$claude_config" ]]; then
+        echo '{}' > "$claude_config"
+    fi
+
+    # Build the MCP server config with env
+    local server_path="$install_dir/dist/index.js"
+
+    if command -v jq &> /dev/null; then
+        if [ -n "$api_key" ]; then
+            # With API key in env
+            local mcp_config="{\"command\": \"node\", \"args\": [\"$server_path\"], \"env\": {\"OPENROUTER_API_KEY\": \"$api_key\"}}"
+            jq --argjson mcp "$mcp_config" '.mcpServers.openrouter = $mcp' "$claude_config" > "$claude_config.tmp" \
+                && mv "$claude_config.tmp" "$claude_config"
+        else
+            # Without API key (rely on shell env)
+            jq --arg path "$server_path" '.mcpServers.openrouter = {command: "node", args: [$path]}' "$claude_config" > "$claude_config.tmp" \
+                && mv "$claude_config.tmp" "$claude_config"
+        fi
+    else
+        # Fallback: use node to merge JSON
+        if [ -n "$api_key" ]; then
+            node -e "
+                const fs = require('fs');
+                const config = JSON.parse(fs.readFileSync('$claude_config', 'utf8'));
+                config.mcpServers = config.mcpServers || {};
+                config.mcpServers.openrouter = {
+                    command: 'node',
+                    args: ['$server_path'],
+                    env: { OPENROUTER_API_KEY: '$api_key' }
+                };
+                fs.writeFileSync('$claude_config', JSON.stringify(config, null, 2));
+            "
+        else
+            node -e "
+                const fs = require('fs');
+                const config = JSON.parse(fs.readFileSync('$claude_config', 'utf8'));
+                config.mcpServers = config.mcpServers || {};
+                config.mcpServers.openrouter = {
+                    command: 'node',
+                    args: ['$server_path']
+                };
+                fs.writeFileSync('$claude_config', JSON.stringify(config, null, 2));
+            "
+        fi
+    fi
+
+    echo -e "  $CHECK ${GREEN}MCP server configured in ~/.claude.json${NC}"
+}
+
+# Save API key to MCP's own config file (as backup)
+save_mcp_config_key() {
+    local api_key="$1"
+    local mcp_config_dir="$HOME/.config/openrouter-mcp"
+    local mcp_config_file="$mcp_config_dir/config.json"
+
+    mkdir -p "$mcp_config_dir"
+
+    if [ -f "$mcp_config_file" ]; then
+        # Merge with existing config using node
+        node -e "
+            const fs = require('fs');
+            const config = JSON.parse(fs.readFileSync('$mcp_config_file', 'utf8'));
+            config.apiKey = '$api_key';
+            fs.writeFileSync('$mcp_config_file', JSON.stringify(config, null, 2));
+        " 2>/dev/null || echo "{\"apiKey\": \"$api_key\"}" > "$mcp_config_file"
+    else
+        echo "{\"apiKey\": \"$api_key\"}" > "$mcp_config_file"
+    fi
 }
 
 # Uninstall
@@ -345,11 +427,13 @@ full_install() {
                 sed_inplace '/# OpenRouter API Key/d' "$SHELL_CONFIG"
                 sed_inplace '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
             fi
-            # Add new
+            # Add new to shell config
             echo "" >> "$SHELL_CONFIG"
             echo "# OpenRouter API Key (added by Claude_GPT_MCP setup)" >> "$SHELL_CONFIG"
             echo "export OPENROUTER_API_KEY=\"$SET_NOW\"" >> "$SHELL_CONFIG"
             export OPENROUTER_API_KEY="$SET_NOW"
+            # Also save to MCP config
+            save_mcp_config_key "$SET_NOW"
             echo -e "  $CHECK ${GREEN}API key saved${NC}"
         elif [[ ! "$SET_NOW" =~ ^[Nn]$ ]]; then
             set_key
@@ -405,44 +489,24 @@ full_install() {
         cp "$CLAUDE_CONFIG" "$CLAUDE_CONFIG.bak"
     fi
 
-    if command -v jq &> /dev/null; then
-        if [ -f "$CLAUDE_CONFIG" ]; then
-            # Validate existing JSON before modifying
-            if ! jq empty "$CLAUDE_CONFIG" 2>/dev/null; then
-                echo -e "  $CROSS ${YELLOW}Warning: ~/.claude.json contains invalid JSON${NC}"
-                echo -e "     Backup saved to ${CYAN}~/.claude.json.bak${NC}"
-                echo -e "     Please fix the file manually and re-run setup"
-                exit 1
-            fi
-            UPDATED=$(jq --arg path "$SERVER_PATH" '.mcpServers.openrouter = {command: "node", args: [$path]}' "$CLAUDE_CONFIG")
-            echo "$UPDATED" > "$CLAUDE_CONFIG"
-        else
-            jq -n --arg path "$SERVER_PATH" '{mcpServers: {openrouter: {command: "node", args: [$path]}}}' > "$CLAUDE_CONFIG"
-        fi
-        echo -e "  $CHECK ${GREEN}Added to Claude Code config${NC}"
-    else
-        if [ ! -f "$CLAUDE_CONFIG" ]; then
-            cat << EOF > "$CLAUDE_CONFIG"
-{
-  "mcpServers": {
-    "openrouter": {
-      "command": "node",
-      "args": ["$SERVER_PATH"]
-    }
-  }
-}
-EOF
-            echo -e "  $CHECK ${GREEN}Created Claude Code config${NC}"
-        else
-            echo ""
-            echo -e "  ${YELLOW}Please add this to ~/.claude.json manually:${NC}"
-            echo ""
-            echo -e "  ${DIM}\"openrouter\": {${NC}"
-            echo -e "  ${DIM}  \"command\": \"node\",${NC}"
-            echo -e "  ${DIM}  \"args\": [\"$SERVER_PATH\"]${NC}"
-            echo -e "  ${DIM}}${NC}"
+    # Validate existing JSON if present
+    if [ -f "$CLAUDE_CONFIG" ] && command -v jq &> /dev/null; then
+        if ! jq empty "$CLAUDE_CONFIG" 2>/dev/null; then
+            echo -e "  $CROSS ${YELLOW}Warning: ~/.claude.json contains invalid JSON${NC}"
+            echo -e "     Backup saved to ${CYAN}~/.claude.json.bak${NC}"
+            echo -e "     Please fix the file manually and re-run setup"
+            exit 1
         fi
     fi
+
+    # Save API key to MCP config (as backup/fallback)
+    if [ -n "$OPENROUTER_API_KEY" ]; then
+        save_mcp_config_key "$OPENROUTER_API_KEY"
+        echo -e "  $CHECK ${GREEN}API key saved to MCP config${NC}"
+    fi
+
+    # Configure Claude MCP with env var for API key
+    configure_claude_mcp "$SCRIPT_DIR" "$OPENROUTER_API_KEY"
 
     print_complete
 }
@@ -487,7 +551,55 @@ case "${1:-}" in
         show_help
         ;;
     --set-key)
-        set_key
+        # Enhanced set-key that updates all locations
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+        echo ""
+        echo -e "${BOLD}Set OpenRouter API Key${NC}"
+        echo ""
+        echo -e "  $ARROW Get your key at: ${CYAN}https://openrouter.ai/keys${NC}"
+        echo ""
+        read -sp "  Enter API key: " NEW_KEY
+        echo ""
+
+        if [ -z "$NEW_KEY" ]; then
+            echo -e "  $CROSS ${YELLOW}No key entered${NC}"
+            exit 1
+        fi
+
+        # Validate format
+        if [[ ! "$NEW_KEY" =~ ^sk-or- ]]; then
+            echo ""
+            echo -e "  ${YELLOW}⚠ Key format looks unusual${NC} ${DIM}(expected sk-or-...)${NC}"
+            read -p "  Continue anyway? (y/N): " CONTINUE
+            if [[ ! "$CONTINUE" =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
+        fi
+
+        # 1. Update shell config (existing behavior)
+        if grep -q "OPENROUTER_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
+            sed_inplace '/# OpenRouter API Key/d' "$SHELL_CONFIG"
+            sed_inplace '/OPENROUTER_API_KEY/d' "$SHELL_CONFIG"
+        fi
+        echo "" >> "$SHELL_CONFIG"
+        echo "# OpenRouter API Key (added by Claude_GPT_MCP setup)" >> "$SHELL_CONFIG"
+        echo "export OPENROUTER_API_KEY=\"$NEW_KEY\"" >> "$SHELL_CONFIG"
+        export OPENROUTER_API_KEY="$NEW_KEY"
+        echo -e "  $CHECK ${GREEN}Saved to shell config${NC}"
+
+        # 2. Update MCP's own config (backup)
+        save_mcp_config_key "$NEW_KEY"
+        echo -e "  $CHECK ${GREEN}Saved to MCP config${NC}"
+
+        # 3. Update Claude's MCP config with env
+        configure_claude_mcp "$SCRIPT_DIR" "$NEW_KEY"
+
+        echo ""
+        echo -e "  ${GREEN}${BOLD}✓ API key updated in all locations${NC}"
+        echo ""
+        echo -e "  ${YELLOW}Restart Claude Code to apply changes${NC}"
+        echo ""
         ;;
     --show-key)
         show_key

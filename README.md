@@ -173,6 +173,13 @@ The installer handles everything:
 - ✓ Prompts for your OpenRouter API key
 - ✓ Configures Claude Code automatically
 
+**After setup, reload your shell config (required for the API key to take effect):**
+
+```bash
+source ~/.bashrc  # Linux
+source ~/.zshrc   # macOS
+```
+
 **Then restart Claude Code and you're ready.**
 
 ## 💬 Examples

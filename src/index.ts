@@ -33,6 +33,7 @@ interface UserConfig {
   defaultModel?: string;
   favoriteModels?: string[];
   shortcuts?: Record<string, string>;
+  apiKey?: string;  // Store API key in config as fallback
 }
 
 interface OpenRouterModel {
@@ -96,12 +97,21 @@ function saveConfig(config: UserConfig): void {
   }
 }
 
+// Get API key with fallback chain: parameter > env var > config file
+function getApiKey(paramKey?: string): string | undefined {
+  if (paramKey) return paramKey;
+  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
+
+  const config = loadConfig();
+  return config.apiKey;
+}
+
 // Fetch models from OpenRouter API
 async function fetchModels(apiKey?: string): Promise<OpenRouterModel[]> {
-  const key = apiKey || process.env.OPENROUTER_API_KEY;
+  const key = getApiKey(apiKey);
 
   if (!key) {
-    throw new Error("OPENROUTER_API_KEY not set");
+    throw new Error("OPENROUTER_API_KEY not set. Run setup.sh --set-key or set the environment variable.");
   }
 
   // Return cached if still valid
@@ -146,11 +156,11 @@ async function queryOpenRouter(
   context?: string,
   apiKey?: string
 ): Promise<string> {
-  const key = apiKey || process.env.OPENROUTER_API_KEY;
+  const key = getApiKey(apiKey);
 
   if (!key) {
     throw new Error(
-      "OPENROUTER_API_KEY not set. Set it as an environment variable or pass it as a parameter."
+      "OPENROUTER_API_KEY not set. Run setup.sh --set-key or set the environment variable."
     );
   }
 
@@ -345,6 +355,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["model"],
+        },
+      },
+      {
+        name: "set_api_key",
+        description: "Store your OpenRouter API key in the config file (alternative to environment variable)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            api_key: {
+              type: "string",
+              description: "Your OpenRouter API key (starts with sk-or-)",
+            },
+          },
+          required: ["api_key"],
         },
       },
     ],
@@ -626,6 +650,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: `Removed from favorites: **${resolvedId}**`,
+            },
+          ],
+        };
+      }
+
+      case "set_api_key": {
+        const { api_key } = args as { api_key?: unknown };
+
+        if (typeof api_key !== "string" || !api_key.trim()) {
+          return {
+            content: [{ type: "text", text: "Error: 'api_key' is required." }],
+            isError: true,
+          };
+        }
+
+        if (!api_key.startsWith("sk-or-")) {
+          return {
+            content: [{ type: "text", text: "Warning: API key doesn't start with 'sk-or-'. Are you sure this is an OpenRouter key?" }],
+            isError: true,
+          };
+        }
+
+        const config = loadConfig();
+        config.apiKey = api_key.trim();
+        saveConfig(config);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: "API key saved to config. You can now use ask_model without setting the environment variable.",
             },
           ],
         };
