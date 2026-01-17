@@ -1,6 +1,6 @@
 # OpenRouter MCP Server for Claude Code
 
-This MCP server bridges Claude Code to OpenRouter, allowing you to query other AI models (GPT-4o, Gemini, DeepSeek, Llama, etc.) without leaving your Claude session.
+This MCP server bridges Claude Code to OpenRouter, allowing you to query other AI models (GPT-5.2-Codex, Gemini, DeepSeek, Llama, etc.) without leaving your Claude session.
 
 ## Prerequisites
 
@@ -63,7 +63,7 @@ Once configured, Claude has access to these tools:
 ### `ask_model`
 Query any OpenRouter model:
 ```
-"Ask GPT-4o to review this function for edge cases"
+"Ask GPT-5.2-Codex to review this function for edge cases"
 "Get Gemini's opinion on this architecture"
 "Ask DeepSeek for an alternative implementation"
 ```
@@ -78,7 +78,7 @@ List available models with pricing:
 ### `set_default_model`
 Set your preferred default model:
 ```
-"Set my default model to gpt-4o"
+"Set my default model to GPT-5.2-Codex"
 ```
 
 ### `get_config`
@@ -108,13 +108,13 @@ If you copy `.claude/commands/` to your project, you get:
 | `/models` | List available OpenRouter models |
 | `/models gpt` | Filter models by name |
 | `/model` | Show current config |
-| `/model gpt-4o` | Set default model |
+| `/model GPT-5.2-Codex` | Set default model |
 
 ## Built-in Shortcuts
 
 | Shortcut | OpenRouter Model ID |
 |----------|---------------------|
-| `gpt-4o` | openai/gpt-4o |
+| `GPT-5.2-Codex` | openai/gpt-5.2-codex |
 | `gpt-4-turbo` | openai/gpt-4-turbo |
 | `claude-3-opus` | anthropic/claude-3-opus |
 | `claude-3-sonnet` | anthropic/claude-3-sonnet |
@@ -134,11 +134,11 @@ You can also use any full OpenRouter model ID directly.
 ## Example Workflow
 
 ```
-You: "I'm not sure if this caching strategy is optimal. Ask GPT-4o for a second opinion."
+You: "I'm not sure if this caching strategy is optimal. Ask GPT-5.2-Codex for a second opinion."
 
 Claude: [Uses ask_model tool with your code as context]
 
-Claude: "GPT-4o suggests using an LRU cache instead of TTL-based expiration because..."
+Claude: "GPT-5.2-Codex suggests using an LRU cache instead of TTL-based expiration because..."
 ```
 
 ## Troubleshooting

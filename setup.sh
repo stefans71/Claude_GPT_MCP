@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/here bin/bash
 
 # OpenRouter MCP Server Setup Script
 # Polished installer with key management
@@ -445,7 +445,7 @@ print_complete() {
     echo -e "  ${DIM}2.${NC} Chat normally - Claude now has access to other AI models"
     echo ""
     echo -e "  ${BOLD}Get a second opinion from other AI models:${NC}"
-    echo -e "  ${DIM}•${NC} ${CYAN}\"Ask GPT-4o to review my plan\"${NC}"
+    echo -e "  ${DIM}•${NC} ${CYAN}\"Ask GPT-5.2-Codex to review my plan\"${NC}"
     echo -e "  ${DIM}•${NC} ${CYAN}\"What would Gemini do differently?\"${NC}"
     echo -e "  ${DIM}•${NC} ${CYAN}\"Have DeepSeek check this for bugs\"${NC}"
     echo ""

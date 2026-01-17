@@ -100,7 +100,7 @@ No special commands needed. Just say "ask GPT-5.2-Codex", "have Gemini review", 
 
 | Feature | Description |
 |---------|-------------|
-| **200+ Models** | GPT-4o, Gemini, DeepSeek, Llama, Mistral, and more |
+| **200+ Models** | GPT-5.2-Codex, Gemini, DeepSeek, Llama, Mistral, and more |
 | **Same Session** | No switching apps or copying code |
 | **Your Context** | Other models see what you're working on |
 | **Quick Access** | Just ask Claude to get another opinion |
