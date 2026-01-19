@@ -31,7 +31,7 @@
 
 </div>
 
-## Why You'll Love This
+## <img src="assets/heading-why-love.svg" alt="Why You'll Love This" height="28">
 
 - **Instant code review** from GPT-5.2-Codex without leaving Claude
 - **Compare approaches** across different LLMs in one conversation
