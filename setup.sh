@@ -21,6 +21,7 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 WHITE='\033[1;37m'
+GRAY='\033[90m'
 BOLD='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
@@ -76,9 +77,9 @@ print_banner() {
     echo "    ╭─────────────────────────────────────────────────────────╮"
     echo "    │                                                         │"
     echo -e "    │   ${WHITE}${BOLD}🔐 OpenRouter MCP Server${NC}${CYAN}                             │"
-    echo -e "    │   ${DIM}Bridge Claude Code to 200+ AI models${NC}${CYAN}                 │"
+    echo -e "    │   ${GRAY}Bridge Claude Code to 200+ AI models${NC}${CYAN}                 │"
     echo "    │                                                         │"
-    echo -e "    │   ${DIM}v${VERSION}${NC}${CYAN}                                                  │"
+    echo -e "    │   ${GRAY}v${VERSION}${NC}${CYAN}                                                  │"
     echo "    │                                                         │"
     echo "    ╰─────────────────────────────────────────────────────────╯"
     echo -e "${NC}"
@@ -686,9 +687,9 @@ show_help() {
     echo -e "    ${CYAN}./setup.sh --help${NC}       Show this help"
     echo ""
     echo -e "    ${BOLD}Security:${NC}"
-    echo -e "    ${DIM}• API keys are stored with chmod 600 (owner-only)${NC}"
-    echo -e "    ${DIM}• Keys are verified with OpenRouter before saving${NC}"
-    echo -e "    ${DIM}• No data is collected or transmitted${NC}"
+    echo -e "    ${GRAY}• API keys are stored with chmod 600 (owner-only)${NC}"
+    echo -e "    ${GRAY}• Keys are verified with OpenRouter before saving${NC}"
+    echo -e "    ${GRAY}• No data is collected or transmitted${NC}"
     echo ""
 }
 
