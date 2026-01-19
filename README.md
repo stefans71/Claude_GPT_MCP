@@ -381,14 +381,18 @@ OpenRouter offers a **free tier** with many models available at no cost. Pay-per
 
 ---
 
-<div align="center">
+<p align="center">
+  <b>Like this project? Give it a ⭐ on GitHub!</b>
+  <br><br>
+  <a href="https://github.com/stefans71/Claude_GPT_MCP/issues">Report Bug</a>
+  •
+  <a href="https://github.com/stefans71/Claude_GPT_MCP/discussions">Discussions</a>
+  •
+  <a href="https://openrouter.ai/models">Browse Models</a>
+</p>
 
-**Built for Claude Code users who want more perspectives**
-
-MIT License
-
-[Report Issue](https://github.com/stefans71/Claude_GPT_MCP/issues) •
-[OpenRouter Models](https://openrouter.ai/models) •
-[OpenRouter](https://openrouter.ai)
-
-</div>
+<p align="center">
+  <sub>Built for Claude Code users who want more perspectives</sub>
+  <br>
+  <sub>Apache 2.0 License</sub>
+</p>
