@@ -253,6 +253,9 @@ configure_claude_mcp() {
         fi
     fi
 
+    # Secure the config file (contains API key)
+    chmod 600 "$claude_config" 2>/dev/null || true
+
     echo -e "  $CHECK ${GREEN}MCP server configured in ~/.claude.json${NC}"
 }
 
@@ -275,6 +278,9 @@ save_mcp_config_key() {
     else
         echo "{\"apiKey\": \"$api_key\"}" > "$mcp_config_file"
     fi
+
+    # Secure the config file (contains API key)
+    chmod 600 "$mcp_config_file" 2>/dev/null || true
 }
 
 # Uninstall

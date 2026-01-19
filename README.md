@@ -125,15 +125,10 @@ curl -sL https://github.com/stefans71/Claude_GPT_MCP/archive/refs/heads/main.tar
 
 That's it! This downloads, extracts, and runs setup in one command. No git required.
 
-**3. After setup, reload your shell config:**
-
-```bash
-source ~/.bashrc  # or ~/.zshrc
-```
+**3. Restart Claude Code and you're ready.**
 
 **VPS Notes:**
-- Your OpenRouter API key is stored on the VPS (in `~/.bashrc` or `~/.zshrc`)
-- The `~/.claude.json` config is also on the VPS
+- Your OpenRouter API key is stored in `~/.claude.json` (passed directly to the MCP server)
 - For Docker/containerized Claude: set `OPENROUTER_API_KEY` as an environment variable
 
 ---
@@ -143,14 +138,7 @@ The installer handles everything:
 - ✓ Prompts for your OpenRouter API key
 - ✓ Configures Claude Code automatically
 
-**After setup, reload your shell config (required for the API key to take effect):**
-
-```bash
-source ~/.bashrc  # Linux
-source ~/.zshrc   # macOS
-```
-
-**Then restart Claude Code and you're ready.**
+**Restart Claude Code and you're ready.**
 
 ## 💬 Examples
 
@@ -329,9 +317,8 @@ rm -rf /path/to/Claude_GPT_MCP
 
 | File | What it does |
 |------|--------------|
-| `~/.claude.json` | Tells Claude Code about OpenRouter |
-| `~/.config/openrouter-mcp/config.json` | Your preferences (default model, etc.) |
-| `~/.bashrc` or `~/.zshrc` | Your API key |
+| `~/.claude.json` | Claude Code config + your API key (in env section) |
+| `~/.config/openrouter-mcp/config.json` | Your preferences (default model, favorites) + API key backup |
 
 ## 🐛 Troubleshooting
 
