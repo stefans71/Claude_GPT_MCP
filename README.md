@@ -59,7 +59,7 @@ flowchart TD
 **Just ask naturally — Claude handles the rest:**
 
 <p align="center">
-  <img src="assets/png/Claude_GPT_MCP_Banner-Glowing-1-2400px.jpeg" alt="Ask Any LLM on OpenRouter for Input" width="100%">
+  <img src="assets/png/Claude_GPT_MCP_Banner-White-Glow-V-2-2400px.jpg" alt="Ask Any LLM on OpenRouter for Input" width="100%">
 </p>
 
 ```
