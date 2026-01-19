@@ -189,7 +189,8 @@ The installer handles everything:
 
 Or just ask Claude: *"Change my OpenRouter API key"*
 
-## 🗑️ Uninstall
+<details>
+<summary><h2>🗑️ Uninstall (click to expand)</h2></summary>
 
 ### What Gets Removed?
 
@@ -315,6 +316,8 @@ rm -rf /path/to/Claude_GPT_MCP
 
 # Windows - just delete the folder in File Explorer
 ```
+
+</details>
 
 </details>
 
