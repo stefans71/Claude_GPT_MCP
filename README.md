@@ -40,15 +40,14 @@ This MCP server lets Claude query **200+ models** via [OpenRouter](https://openr
 
 ```mermaid
 flowchart TD
-    A[You + Claude Code] -->|"Ask GPT-5.2-Codex to review"| B[Claude Hub - MCP Bridge]
-    B --> C[OpenRouter API]
-    C --> D[GPT-5.2 Codex]
-    C --> E[Gemini 2.5]
-    C --> F[DeepSeek R1]
-    D --> G[Response via Claude]
-    E --> G
-    F --> G
-    G --> H[You get the answer ✅]
+    A["🧑‍💻 You + Claude Code"] -->|"Ask GPT-5.2-Codex to review"| B["🌉 Claude Hub<br/>MCP Bridge"]
+    B --> C["🔀 OpenRouter API"]
+    C --> D["GPT-5.2 Codex"]
+    C --> E["Gemini 2.5"]
+    C --> F["DeepSeek R1"]
+    C --> G["...200+ models"]
+    D & E & F & G --> H["📨 Response via Claude"]
+    H --> I["✅ You get the answer"]
 ```
 
 **Just ask naturally — Claude handles the rest:**
