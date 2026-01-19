@@ -2,6 +2,12 @@
 
 <div align="center">
 
+![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)
+![Node](https://img.shields.io/badge/node-18%2B-green?style=for-the-badge&logo=node.js)
+![Claude](https://img.shields.io/badge/Claude-Code-orange?style=for-the-badge&logo=anthropic)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-200%2B%20Models-purple?style=for-the-badge)
+![GitHub stars](https://img.shields.io/github/stars/stefans71/Claude_GPT_MCP?style=for-the-badge)
+
 **Get instant second opinions, code reviews, and architecture feedback directly inside Claude.**
 
 *No context switching. No copy-paste. Just ask.*
