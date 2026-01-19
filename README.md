@@ -8,6 +8,12 @@
 ![OpenRouter](https://img.shields.io/badge/OpenRouter-200%2B%20Models-purple?style=for-the-badge)
 ![GitHub stars](https://img.shields.io/github/stars/stefans71/Claude_GPT_MCP?style=for-the-badge)
 
+<br>
+
+<img src="assets/png/anthropic-logo-small.png" alt="Anthropic" height="50">&nbsp;&nbsp;&nbsp;➜&nbsp;&nbsp;&nbsp;<img src="assets/png/openrouter-logo-small.png" alt="OpenRouter" height="50">&nbsp;&nbsp;&nbsp;➜&nbsp;&nbsp;&nbsp;<img src="assets/png/github-logo-small.png" alt="GitHub" height="70">
+
+<br>
+
 **Get instant second opinions, code reviews, and architecture feedback directly inside Claude.**
 
 *No context switching. No copy-paste. Just ask.*
@@ -51,6 +57,10 @@ flowchart TD
 ```
 
 **Just ask naturally — Claude handles the rest:**
+
+<p align="center">
+  <img src="assets/png/Claude_GPT_MCP_Banner-1-2400px.png" alt="Ask Any LLM on OpenRouter for Input" width="100%">
+</p>
 
 ```
 You: "Write a function to parse CSV files"
@@ -352,8 +362,12 @@ claude --mcp-debug
 <p>
   <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/Claude-FF6B35?style=for-the-badge&logo=anthropic&logoColor=white" />
-  <img src="https://img.shields.io/badge/OpenRouter-8B5CF6?style=for-the-badge" />
+</p>
+
+<p>
+  <img src="assets/png/anthropic-logo-small.png" alt="Anthropic" height="40">
+  &nbsp;&nbsp;
+  <img src="assets/png/openrouter-logo-small.png" alt="OpenRouter" height="40">
 </p>
 
 ## Built with Multi-Model Collaboration

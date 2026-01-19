@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="400" height="100">
+  <rect width="400" height="100" fill="#0D1117" rx="8"/>
+  <text x="200" y="35" text-anchor="middle" fill="#FF6B00" font-family="monospace" font-size="10" font-weight="bold">
+    <tspan x="200" dy="0">506     3091   385 4008000087 091    09  19808891</tspan>
+    <tspan x="200" dy="12">58904    28882  285    706     093    097 790   7407</tspan>
+    <tspan x="200" dy="12">286 105   282389 385     04     0800800897 198000009</tspan>
+    <tspan x="200" dy="12">388888885  282  90884     04     091    09  190  7607</tspan>
+    <tspan x="200" dy="12">309     405 205   1005     06     083    087 790    506</tspan>
+  </text>
+  <text x="200" y="90" text-anchor="middle" fill="#FF6B00" font-family="system-ui, sans-serif" font-size="12" font-weight="600">Claude Code</text>
+</svg>

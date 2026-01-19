@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" width="200" height="50">
+  <rect width="200" height="50" fill="#0D1117" rx="6"/>
+  <text x="100" y="18" text-anchor="middle" fill="#2563EB" font-family="monospace" font-size="5" font-weight="bold">
+    <tspan x="100" dy="0">██████╗ ██████╗ ███████╗███╗   ██╗</tspan>
+    <tspan x="100" dy="6">██╔═══██╗██╔══██╗██╔════╝████╗  ██║</tspan>
+    <tspan x="100" dy="6">██║   ██║██████╔╝█████╗  ██╔██╗ ██║</tspan>
+  </text>
+  <text x="100" y="42" text-anchor="middle" fill="#2563EB" font-family="system-ui, sans-serif" font-size="11" font-weight="600">OpenRouter</text>
+</svg>

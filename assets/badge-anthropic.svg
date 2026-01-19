@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50" width="180" height="50">
+  <rect width="180" height="50" fill="#0D1117" rx="6"/>
+  <text x="90" y="22" text-anchor="middle" fill="#FF6B00" font-family="monospace" font-size="6" font-weight="bold">
+    <tspan x="90" dy="0">506   3091  385 4008000087</tspan>
+    <tspan x="90" dy="7">58904  28882 285    706</tspan>
+    <tspan x="90" dy="7">286 105 282389 385    04</tspan>
+  </text>
+  <text x="90" y="45" text-anchor="middle" fill="#FF6B00" font-family="system-ui, sans-serif" font-size="10" font-weight="600">Anthropic</text>
+</svg>
