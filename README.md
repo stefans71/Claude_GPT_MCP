@@ -344,6 +344,15 @@ claude --mcp-debug
 
 ---
 
+### Built With
+
+<p>
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/Claude-FF6B35?style=for-the-badge&logo=anthropic&logoColor=white" />
+  <img src="https://img.shields.io/badge/OpenRouter-8B5CF6?style=for-the-badge" />
+</p>
+
 ## Built with Multi-Model Collaboration
 
 This project practices what it preaches. **GPT-5.2-Codex reviewed and improved this codebase** via OpenRouter, demonstrating real multi-model workflows:
