@@ -22,6 +22,7 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 WHITE='\033[1;37m'
 GRAY='\033[90m'
+AQUA='\033[96m'
 BOLD='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
@@ -77,9 +78,9 @@ print_banner() {
     echo "    ╭─────────────────────────────────────────────────────────╮"
     echo "    │                                                         │"
     echo -e "    │   ${WHITE}${BOLD}🔐 OpenRouter MCP Server${NC}${CYAN}                             │"
-    echo -e "    │   ${GRAY}Bridge Claude Code to 200+ AI models${NC}${CYAN}                 │"
+    echo -e "    │   ${AQUA}Bridge Claude Code to 200+ AI models${NC}${CYAN}                 │"
     echo "    │                                                         │"
-    echo -e "    │   ${GRAY}v${VERSION}${NC}${CYAN}                                                  │"
+    echo -e "    │   ${AQUA}v${VERSION}${NC}${CYAN}                                                  │"
     echo "    │                                                         │"
     echo "    ╰─────────────────────────────────────────────────────────╯"
     echo -e "${NC}"
